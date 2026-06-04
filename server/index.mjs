@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 
-const PORT = Number(process.env.SYNC_PORT) || 8787;
+const PORT = Number(process.env.PORT ?? process.env.SYNC_PORT) || 8787;
 const PRESENCE_TIMEOUT_MS = 12000;
 
 const VALID_FOUR_LS_COLUMNS = new Set([

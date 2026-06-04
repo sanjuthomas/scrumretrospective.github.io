@@ -48,17 +48,54 @@ Join links work across Chrome, Safari, and other browsers on the same machine or
 
 ## Build & deploy
 
+The app splits into two parts:
+
+| Part | Host | Role |
+|------|------|------|
+| **Static UI** | GitHub Pages | React app at [scrumretrospective.org](https://scrumretrospective.org) |
+| **Sync API** | Railway | In-memory room sync (`server/index.mjs`) |
+
+### 1. GitHub Pages (static UI)
+
+1. In the repo **Settings → Pages**, set **Source** to **GitHub Actions**.
+2. Add a repository variable: **Settings → Secrets and variables → Actions → Variables**
+   - Name: `VITE_SYNC_API_URL`
+   - Value: your Railway sync API base URL, e.g. `https://your-app.up.railway.app/api`
+3. Push to `main` — the workflow builds with that URL baked in and deploys `dist/`.
+
 ```bash
 npm run build
 ```
 
-Deploy the `dist` folder to **GitHub Pages**. A `public/CNAME` file is included for the custom domain `scrumretrospective.org`.
+A `public/CNAME` file is included for the custom domain `scrumretrospective.org`. Point DNS at GitHub Pages per [GitHub’s custom domain docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site).
 
-Push to `main` to run the included GitHub Actions workflow, or upload `dist` manually.
+### 2. Railway (sync API)
 
-### Production sync API
+1. Create a new [Railway](https://railway.app) project from this repo.
+2. Set the service **Root Directory** to `server`.
+3. Railway runs `node index.mjs` (see `server/railway.toml`). It listens on `PORT` (Railway sets this automatically).
+4. Copy the public URL and append `/api` — that is your `VITE_SYNC_API_URL` for GitHub Actions.
+5. Optional: add a custom domain in Railway and use that URL instead.
 
-GitHub Pages serves the static UI only. Deploy `server/index.mjs` separately (e.g. Railway, Render, Fly.io) and set `VITE_SYNC_API_URL` at build time to that host's `/api` URL.
+Health check: `GET /api/health` → `{ "ok": true }`
+
+**Note:** Room data is in-memory. Redeploying or restarting the Railway service clears active sessions.
+
+### Local development
+
+```bash
+npm install
+npm run dev
+```
+
+No `VITE_SYNC_API_URL` needed locally — Vite proxies `/api` to `http://localhost:8787`.
+
+For a production-like local build:
+
+```bash
+VITE_SYNC_API_URL=https://your-app.up.railway.app/api npm run build
+npm run preview
+```
 
 ## Storage model
 
