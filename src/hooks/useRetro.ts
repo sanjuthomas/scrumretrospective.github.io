@@ -5,7 +5,10 @@ import {
   type Retrospective,
 } from "../lib/retroStore";
 
-export function useRetro(retroId: string | undefined): {
+export function useRetro(
+  retroId: string | undefined,
+  participantId?: string | null,
+): {
   retro: Retrospective | null;
   loading: boolean;
 } {
@@ -21,11 +24,15 @@ export function useRetro(retroId: string | undefined): {
       return;
     }
 
-    return subscribeRetro(retroId, (next, isLoading) => {
-      setRetro(next);
-      setLoading(isLoading);
-    });
-  }, [retroId]);
+    return subscribeRetro(
+      retroId,
+      (next, isLoading) => {
+        setRetro(next);
+        setLoading(isLoading);
+      },
+      participantId,
+    );
+  }, [retroId, participantId]);
 
   return { retro, loading };
 }

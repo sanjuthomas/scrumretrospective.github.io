@@ -11,6 +11,8 @@ const VALID_FOUR_LS_COLUMNS = new Set([
   "longedFor",
 ]);
 
+const VALID_VOTE_VALUES = new Set(["up", "down"]);
+
 const rooms = new Map();
 
 function corsHeaders(origin) {
@@ -70,6 +72,7 @@ function enrichRoomWithPresence(room) {
   return {
     ...room,
     cards: room.cards ?? [],
+    votes: room.votes ?? [],
     participants: room.participants.map((p) => ({
       id: p.id,
       fullName: p.fullName,
@@ -78,6 +81,23 @@ function enrichRoomWithPresence(room) {
       online: isOnline(p.lastSeen),
     })),
   };
+}
+
+function enrichRoomForClient(room, participantId) {
+  const enriched = enrichRoomWithPresence(room);
+  const { votes: _votes, ...clientRoom } = enriched;
+
+  if (participantId && (room.phase ?? "assembly") === "voting") {
+    const myVotes = {};
+    for (const vote of room.votes ?? []) {
+      if (vote.participantId === participantId) {
+        myVotes[vote.cardId] = vote.value;
+      }
+    }
+    clientRoom.myVotes = myVotes;
+  }
+
+  return clientRoom;
 }
 
 function updateParticipantLastSeen(room, participantId, lastSeen) {
@@ -191,7 +211,17 @@ const server = createServer(async (req, res) => {
         return;
       }
       if ((room.phase ?? "assembly") !== "active") {
-        send(res, 403, { error: "Retrospective has not started yet" }, origin);
+        send(
+          res,
+          403,
+          {
+            error:
+              (room.phase ?? "assembly") === "voting"
+                ? "Adding items is closed during voting"
+                : "Retrospective has not started yet",
+          },
+          origin,
+        );
         return;
       }
       if (!room.participants?.some((p) => p.id === participantId)) {
@@ -211,7 +241,87 @@ const server = createServer(async (req, res) => {
         cards: [...(room.cards ?? []), card],
       };
       rooms.set(roomId, updated);
-      send(res, 200, enrichRoomWithPresence(updated), origin);
+      send(res, 200, enrichRoomForClient(updated, participantId), origin);
+      return;
+    } catch {
+      send(res, 400, { error: "Invalid JSON" }, origin);
+      return;
+    }
+  }
+
+  const voteMatch = url.pathname.match(
+    /^\/api\/retrospectives\/([^/]+)\/votes$/,
+  );
+  if (voteMatch && req.method === "POST") {
+    const roomId = decodeURIComponent(voteMatch[1]);
+    try {
+      const body = await readBody(req);
+      const participantId = body?.participantId;
+      const cardId = body?.cardId;
+      const value = body?.value;
+
+      if (!participantId || !cardId || !value) {
+        send(
+          res,
+          400,
+          { error: "participantId, cardId, and value are required" },
+          origin,
+        );
+        return;
+      }
+      if (!VALID_VOTE_VALUES.has(value)) {
+        send(res, 400, { error: "Invalid vote value" }, origin);
+        return;
+      }
+
+      const room = rooms.get(roomId);
+      if (!room) {
+        send(res, 404, { error: "Not found" }, origin);
+        return;
+      }
+      if ((room.phase ?? "assembly") !== "voting") {
+        send(res, 403, { error: "Voting is not open yet" }, origin);
+        return;
+      }
+      if (!room.participants?.some((p) => p.id === participantId)) {
+        send(res, 403, { error: "Participant not found" }, origin);
+        return;
+      }
+
+      const card = (room.cards ?? []).find((c) => c.id === cardId);
+      if (!card) {
+        send(res, 404, { error: "Card not found" }, origin);
+        return;
+      }
+      if (card.authorId === participantId) {
+        send(res, 403, { error: "You cannot vote on your own item" }, origin);
+        return;
+      }
+
+      const votes = [...(room.votes ?? [])];
+      const existingIndex = votes.findIndex(
+        (v) => v.participantId === participantId && v.cardId === cardId,
+      );
+      if (existingIndex >= 0 && votes[existingIndex].value === value) {
+        votes.splice(existingIndex, 1);
+      } else if (existingIndex >= 0) {
+        votes[existingIndex] = {
+          ...votes[existingIndex],
+          value,
+        };
+      } else {
+        votes.push({
+          id: randomUUID(),
+          cardId,
+          participantId,
+          value,
+          createdAt: Date.now(),
+        });
+      }
+
+      const updated = { ...room, votes };
+      rooms.set(roomId, updated);
+      send(res, 200, enrichRoomForClient(updated, participantId), origin);
       return;
     } catch {
       send(res, 400, { error: "Invalid JSON" }, origin);
@@ -233,7 +343,8 @@ const server = createServer(async (req, res) => {
       send(res, 404, { error: "Not found" }, origin);
       return;
     }
-    send(res, 200, enrichRoomWithPresence(room), origin);
+    const participantId = url.searchParams.get("participantId");
+    send(res, 200, enrichRoomForClient(room, participantId), origin);
     return;
   }
 
@@ -246,6 +357,9 @@ const server = createServer(async (req, res) => {
       }
       const existing = rooms.get(id);
       const stripped = stripEphemeralFields(body);
+      delete stripped.votes;
+      delete stripped.myVotes;
+
       if (existing) {
         const lastSeenById = new Map(
           existing.participants.map((p) => [p.id, p.lastSeen]),
@@ -257,12 +371,32 @@ const server = createServer(async (req, res) => {
         if (!stripped.cards) {
           stripped.cards = existing.cards ?? [];
         }
+        stripped.votes = existing.votes ?? [];
+
+        const existingPhase = existing.phase ?? "assembly";
+        const nextPhase = stripped.phase ?? existingPhase;
+        if (nextPhase === "voting" && existingPhase === "assembly") {
+          send(
+            res,
+            403,
+            { error: "Start the retrospective before opening voting" },
+            origin,
+          );
+          return;
+        }
+        if (nextPhase === "active" && existingPhase === "voting") {
+          send(res, 403, { error: "Cannot return to retrospective phase" }, origin);
+          return;
+        }
+        stripped.phase = nextPhase;
+      } else {
+        stripped.votes = [];
       }
       if (!stripped.cards) {
         stripped.cards = [];
       }
       rooms.set(id, stripped);
-      send(res, 200, enrichRoomWithPresence(rooms.get(id)), origin);
+      send(res, 200, enrichRoomForClient(rooms.get(id)), origin);
       return;
     } catch {
       send(res, 400, { error: "Invalid JSON" }, origin);

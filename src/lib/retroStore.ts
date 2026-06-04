@@ -1,4 +1,4 @@
-import { addRetroCard, fetchRetro, saveRetro } from "./retroApi";
+import { addRetroCard, castRetroVote, fetchRetro, saveRetro } from "./retroApi";
 
 export interface Participant {
   id: string;
@@ -11,7 +11,9 @@ export interface Participant {
   lastSeen?: number;
 }
 
-export type RetroPhase = "assembly" | "active";
+export type RetroPhase = "assembly" | "active" | "voting";
+
+export type VoteValue = "up" | "down";
 
 export type FourLsColumn = "liked" | "learned" | "lacked" | "longedFor";
 
@@ -30,6 +32,8 @@ export interface Retrospective {
   participants: Participant[];
   phase?: RetroPhase;
   cards?: RetroCard[];
+  /** Current participant's votes during voting; counts are never exposed */
+  myVotes?: Partial<Record<string, VoteValue>>;
 }
 
 const PARTICIPANT_SESSION_PREFIX = "scrum-retro-participant:";
@@ -45,8 +49,11 @@ export function getCachedRetro(id: string): Retrospective | null {
 }
 
 /** Always fetches latest state from the sync server and updates the cache. */
-export async function fetchRetroFresh(id: string): Promise<Retrospective | null> {
-  const remote = await fetchRetro(id);
+export async function fetchRetroFresh(
+  id: string,
+  participantId?: string | null,
+): Promise<Retrospective | null> {
+  const remote = await fetchRetro(id, participantId ?? undefined);
   if (remote) {
     cacheRetro(remote);
     return remote;
@@ -160,6 +167,28 @@ export async function startRetro(
   return updated;
 }
 
+export async function startVoting(
+  retroId: string,
+): Promise<Retrospective | null> {
+  const retro = await fetchRetroFresh(retroId);
+  if (!retro) return null;
+  if ((retro.phase ?? "assembly") !== "active") {
+    throw new Error("Voting can only start after the retrospective begins.");
+  }
+
+  const updated: Retrospective = {
+    ...retro,
+    phase: "voting",
+    cards: retro.cards ?? [],
+  };
+  cacheRetro(updated);
+  const saved = await saveRetro(updated);
+  if (!saved) {
+    throw new Error("Could not start voting. Is the sync server running?");
+  }
+  return updated;
+}
+
 export async function addCard(
   retroId: string,
   participantId: string,
@@ -173,6 +202,23 @@ export async function addCard(
     participantId,
     column,
     text: trimmed,
+  });
+  if (updated) {
+    cacheRetro(updated);
+  }
+  return updated;
+}
+
+export async function castVote(
+  retroId: string,
+  participantId: string,
+  cardId: string,
+  value: VoteValue,
+): Promise<Retrospective | null> {
+  const updated = await castRetroVote(retroId, {
+    participantId,
+    cardId,
+    value,
   });
   if (updated) {
     cacheRetro(updated);
@@ -194,6 +240,10 @@ function cardsKey(retro: Retrospective): string {
   return JSON.stringify(retro.cards ?? []);
 }
 
+function myVotesKey(retro: Retrospective): string {
+  return JSON.stringify(retro.myVotes ?? {});
+}
+
 function retroChanged(
   prev: Retrospective | null,
   next: Retrospective | null,
@@ -207,6 +257,7 @@ function retroChanged(
     return true;
   }
   if (cardsKey(prev) !== cardsKey(next)) return true;
+  if (myVotesKey(prev) !== myVotesKey(next)) return true;
   return (
     JSON.stringify(prev.participants.map((p) => p.fullName)) !==
     JSON.stringify(next.participants.map((p) => p.fullName))
@@ -216,6 +267,7 @@ function retroChanged(
 export function subscribeRetro(
   retroId: string,
   listener: RetroListener,
+  participantId?: string | null,
 ): () => void {
   let cancelled = false;
   let lastRetro: Retrospective | null = memoryCache.get(retroId) ?? null;
@@ -227,7 +279,7 @@ export function subscribeRetro(
       listener(null, true);
     }
 
-    const retro = await fetchRetroFresh(retroId);
+    const retro = await fetchRetroFresh(retroId, participantId);
     if (cancelled) return;
 
     if (retroChanged(lastRetro, retro)) {

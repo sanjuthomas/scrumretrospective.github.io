@@ -408,12 +408,32 @@ a {
 }
 
 .session-top__phase {
-  margin: auto 0 0;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  margin: 0;
   color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.45;
+}
+
+.session-top__phase-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: auto 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.session-top__phase-btn {
+  width: auto;
+  flex-shrink: 0;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+}
+
+.session-top__phase-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
 }
 
 .session-top__invite .copy-link {
@@ -576,10 +596,19 @@ a {
 }
 
 .four-ls-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
   padding: 0.65rem 0.75rem;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+
+.four-ls-card__content {
+  flex: 1;
+  min-width: 0;
 }
 
 .four-ls-card__text {
@@ -635,6 +664,64 @@ a {
 
 .four-ls-column__error {
   margin: 0;
+}
+
+.card-vote {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.card-vote__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.card-vote__btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.card-vote__btn:hover:not(:disabled) {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--sky-muted);
+}
+
+.card-vote__btn:focus-visible {
+  outline: 3px solid var(--highlight);
+  outline-offset: 2px;
+}
+
+.card-vote__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card-vote__btn--selected {
+  color: var(--primary-text);
+  background: var(--primary);
+  border-color: var(--primary-hover);
+}
+
+.card-vote__btn--selected:hover:not(:disabled) {
+  color: var(--primary-text);
+  background: var(--primary-hover);
+  border-color: #004870;
 }
 
 @media (max-width: 1100px) and (min-width: 641px) {

@@ -8,22 +8,26 @@ import { FourLsBoard } from "../components/FourLsBoard";
 import { usePresence } from "../hooks/usePresence";
 import { useRetro } from "../hooks/useRetro";
 import { formatRetroCreatedAt } from "../lib/formatDate";
+import { getPhaseLabel } from "../lib/phases";
 import {
   getJoinUrl,
   getParticipantSession,
   startRetro,
+  startVoting,
 } from "../lib/retroStore";
 
 export function SessionPage() {
   const { retroId } = useParams<{ retroId: string }>();
-  const { retro, loading } = useRetro(retroId);
   const currentParticipantId = retroId
     ? getParticipantSession(retroId)
     : null;
+  const { retro, loading } = useRetro(retroId, currentParticipantId);
 
   usePresence(retroId, currentParticipantId);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [startingVoting, setStartingVoting] = useState(false);
+  const [startVotingError, setStartVotingError] = useState<string | null>(null);
 
   if (!retroId) {
     return (
@@ -79,6 +83,8 @@ export function SessionPage() {
   const initiator = retro.participants.find((p) => p.isInitiator);
   const phase = retro.phase ?? "assembly";
   const isAssembly = phase === "assembly";
+  const isActive = phase === "active";
+  const isVoting = phase === "voting";
 
   async function handleStartRetro() {
     if (!retroId || starting || !isInitiator || !isAssembly) return;
@@ -92,6 +98,21 @@ export function SessionPage() {
       );
     } finally {
       setStarting(false);
+    }
+  }
+
+  async function handleStartVoting() {
+    if (!retroId || startingVoting || !isInitiator || !isActive) return;
+    setStartingVoting(true);
+    setStartVotingError(null);
+    try {
+      await startVoting(retroId);
+    } catch (err) {
+      setStartVotingError(
+        err instanceof Error ? err.message : "Could not start voting.",
+      );
+    } finally {
+      setStartingVoting(false);
     }
   }
 
@@ -115,9 +136,23 @@ export function SessionPage() {
                 <dd>{formatRetroCreatedAt(retro.createdAt)}</dd>
               </div>
             </dl>
-            <p className="session-top__phase">
-              {isAssembly ? "Phase 1 — Team assembly" : "Phase 2 — Retrospective"}
-            </p>
+            <div className="session-top__phase-row">
+              <p className="session-top__phase">{getPhaseLabel(phase)}</p>
+              {isInitiator && isActive && (
+                <Button
+                  className="session-top__phase-btn"
+                  disabled={startingVoting}
+                  onClick={handleStartVoting}
+                >
+                  {startingVoting ? "Starting…" : "Start Voting"}
+                </Button>
+              )}
+            </div>
+            {startVotingError && (
+              <p className="error-text session-top__phase-error">
+                {startVotingError}
+              </p>
+            )}
           </section>
 
           {isInitiator && (
@@ -140,11 +175,20 @@ export function SessionPage() {
             </section>
           )}
 
-          {!isInitiator && currentParticipantId && !isAssembly && (
+          {!isInitiator && currentParticipantId && isActive && (
             <section className="session-top__card session-top__aside">
               <p className="session-top__invite-text">
                 The retrospective is in progress. Add your items to the board
                 below.
+              </p>
+            </section>
+          )}
+
+          {!isInitiator && currentParticipantId && isVoting && (
+            <section className="session-top__card session-top__aside">
+              <p className="session-top__invite-text">
+                Voting is open. Use the thumbs up or down buttons on items from
+                other participants.
               </p>
             </section>
           )}
@@ -183,6 +227,7 @@ export function SessionPage() {
           <FourLsBoard
             retro={retro}
             retroId={retroId}
+            phase={phase}
             currentParticipantId={currentParticipantId}
           />
         )}

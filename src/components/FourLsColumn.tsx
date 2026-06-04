@@ -1,14 +1,19 @@
 import { type FormEvent, useState } from "react";
 import type { FourLsColumnDef } from "../lib/fourLs";
-import type { Participant, RetroCard } from "../lib/retroStore";
+import type { Participant, RetroCard, VoteValue } from "../lib/retroStore";
 import { Button } from "./Button";
+import { CardVoteButtons } from "./CardVoteButtons";
 
 interface FourLsColumnProps {
   column: FourLsColumnDef;
   cards: RetroCard[];
   participantsById: Map<string, Participant>;
   canAdd: boolean;
+  canVote: boolean;
+  currentParticipantId: string | null;
+  myVotes: Partial<Record<string, VoteValue>>;
   onAdd: (text: string) => Promise<void>;
+  onVote: (cardId: string, value: VoteValue) => Promise<void>;
 }
 
 export function FourLsColumn({
@@ -16,10 +21,15 @@ export function FourLsColumn({
   cards,
   participantsById,
   canAdd,
+  canVote,
+  currentParticipantId,
+  myVotes,
   onAdd,
+  onVote,
 }: FourLsColumnProps) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [votingCardId, setVotingCardId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent) {
@@ -39,6 +49,19 @@ export function FourLsColumn({
     }
   }
 
+  async function handleVote(cardId: string, value: VoteValue) {
+    if (!canVote || votingCardId) return;
+    setVotingCardId(cardId);
+    setError(null);
+    try {
+      await onVote(cardId, value);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not record vote.");
+    } finally {
+      setVotingCardId(null);
+    }
+  }
+
   const sortedCards = [...cards].sort((a, b) => a.createdAt - b.createdAt);
 
   return (
@@ -53,12 +76,26 @@ export function FourLsColumn({
       <ul className="four-ls-column__cards">
         {sortedCards.map((card) => {
           const author = participantsById.get(card.authorId);
+          const isOwnCard =
+            currentParticipantId != null && card.authorId === currentParticipantId;
+          const showVoteButtons = canVote && !isOwnCard;
+
           return (
             <li key={card.id} className="four-ls-card">
-              <p className="four-ls-card__text">{card.text}</p>
-              <p className="four-ls-card__meta">
-                {author?.fullName ?? "Unknown"}
-              </p>
+              <div className="four-ls-card__content">
+                <p className="four-ls-card__text">{card.text}</p>
+                <p className="four-ls-card__meta">
+                  {author?.fullName ?? "Unknown"}
+                </p>
+              </div>
+              {showVoteButtons && (
+                <CardVoteButtons
+                  cardId={card.id}
+                  currentVote={myVotes[card.id]}
+                  disabled={votingCardId === card.id}
+                  onVote={handleVote}
+                />
+              )}
             </li>
           );
         })}

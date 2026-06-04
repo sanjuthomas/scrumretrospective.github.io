@@ -1,11 +1,17 @@
-import type { FourLsColumn, Retrospective } from "./retroStore";
+import type { FourLsColumn, Retrospective, VoteValue } from "./retroStore";
 
 const API_BASE =
   import.meta.env.VITE_SYNC_API_URL?.replace(/\/$/, "") ?? "/api";
 
-export async function fetchRetro(id: string): Promise<Retrospective | null> {
+export async function fetchRetro(
+  id: string,
+  participantId?: string,
+): Promise<Retrospective | null> {
   try {
-    const res = await fetch(`${API_BASE}/retrospectives/${id}`);
+    const query = participantId
+      ? `?participantId=${encodeURIComponent(participantId)}`
+      : "";
+    const res = await fetch(`${API_BASE}/retrospectives/${id}${query}`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
     return (await res.json()) as Retrospective;
@@ -15,8 +21,9 @@ export async function fetchRetro(id: string): Promise<Retrospective | null> {
 }
 
 export async function saveRetro(retro: Retrospective): Promise<boolean> {
+  const { myVotes: _myVotes, ...rest } = retro;
   const payload = {
-    ...retro,
+    ...rest,
     participants: retro.participants.map(
       ({ online: _online, lastSeen: _lastSeen, ...p }) => p,
     ),
@@ -69,6 +76,34 @@ export async function addRetroCard(
         error?: string;
       } | null;
       throw new Error(body?.error ?? `add card failed: ${res.status}`);
+    }
+    return (await res.json()) as Retrospective;
+  } catch (err) {
+    if (err instanceof Error) throw err;
+    return null;
+  }
+}
+
+export async function castRetroVote(
+  retroId: string,
+  payload: {
+    participantId: string;
+    cardId: string;
+    value: VoteValue;
+  },
+): Promise<Retrospective | null> {
+  try {
+    const res = await fetch(`${API_BASE}/retrospectives/${retroId}/votes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      throw new Error(body?.error ?? `vote failed: ${res.status}`);
     }
     return (await res.json()) as Retrospective;
   } catch (err) {
