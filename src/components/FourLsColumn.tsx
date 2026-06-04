@@ -6,7 +6,7 @@ import type {
   VoteValue,
 } from "../lib/retroStore";
 import type { CardVoteCounts as CardVoteCountsType } from "../lib/votes";
-import { effectiveVote } from "../lib/votes";
+import { sortCardsForResults } from "../lib/sortCards";
 import { Button } from "./Button";
 import { CardVoteButtons } from "./CardVoteButtons";
 import { CardVoteCounts } from "./CardVoteCounts";
@@ -75,16 +75,10 @@ export function FourLsColumn({
 
   const sortedCards = useMemo(() => {
     if (showResults) {
-      return [...cards].sort((a, b) => {
-        const scoreDiff =
-          effectiveVote(cardVoteCounts[b.id]) -
-          effectiveVote(cardVoteCounts[a.id]);
-        if (scoreDiff !== 0) return scoreDiff;
-        return a.createdAt - b.createdAt;
-      });
+      return sortCardsForResults(cards, column.id, cardVoteCounts);
     }
     return [...cards].sort((a, b) => a.createdAt - b.createdAt);
-  }, [cards, showResults, cardVoteCounts]);
+  }, [cards, column.id, showResults, cardVoteCounts]);
 
   return (
     <section className="four-ls-column" aria-labelledby={`column-${column.id}`}>

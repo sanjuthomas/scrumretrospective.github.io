@@ -1,5 +1,9 @@
 import type { RetroPhase } from "./retroStore";
 
+export function isResultsPhase(phase: RetroPhase | undefined): boolean {
+  return (phase ?? "assembly") === "results";
+}
+
 export function getPhaseLabel(phase: RetroPhase | undefined): string {
   switch (phase ?? "assembly") {
     case "assembly":

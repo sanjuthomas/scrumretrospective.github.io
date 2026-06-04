@@ -1,4 +1,4 @@
-import { addRetroCard, castRetroVote, fetchRetro, saveRetro } from "./retroApi";
+import { addRetroCard, castRetroVote, deleteRetro, fetchRetro, saveRetro } from "./retroApi";
 import type { CardVoteCounts } from "./votes";
 
 export interface Participant {
@@ -49,6 +49,10 @@ function cacheRetro(retro: Retrospective): void {
 
 export function getCachedRetro(id: string): Retrospective | null {
   return memoryCache.get(id) ?? null;
+}
+
+export function clearCachedRetro(id: string): void {
+  memoryCache.delete(id);
 }
 
 /** Always fetches latest state from the sync server and updates the cache. */
@@ -220,6 +224,14 @@ export async function closeVoting(
     return saved;
   }
   return fetchRetroFresh(retroId, participantId);
+}
+
+export async function endRetro(retroId: string): Promise<void> {
+  const deleted = await deleteRetro(retroId);
+  if (!deleted) {
+    throw new Error("Could not end retrospective. Is the sync server running?");
+  }
+  clearCachedRetro(retroId);
 }
 
 export async function addCard(

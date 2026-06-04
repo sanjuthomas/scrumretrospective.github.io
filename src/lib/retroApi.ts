@@ -113,6 +113,17 @@ export async function castRetroVote(
   }
 }
 
+export async function deleteRetro(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/retrospectives/${id}`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function sendPresenceLeave(
   retroId: string,
   participantId: string,

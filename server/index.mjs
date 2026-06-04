@@ -17,7 +17,7 @@ const rooms = new Map();
 
 function corsHeaders(origin) {
   const headers = {
-    "Access-Control-Allow-Methods": "GET, PUT, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Content-Type": "application/json",
   };
@@ -439,6 +439,16 @@ const server = createServer(async (req, res) => {
       send(res, 400, { error: "Invalid JSON" }, origin);
       return;
     }
+  }
+
+  if (req.method === "DELETE") {
+    if (!rooms.has(id)) {
+      send(res, 404, { error: "Not found" }, origin);
+      return;
+    }
+    rooms.delete(id);
+    send(res, 200, { ok: true }, origin);
+    return;
   }
 
   send(res, 405, { error: "Method not allowed" }, origin);

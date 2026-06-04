@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/Button";
 import { CopyLinkButton } from "../components/CopyLinkButton";
 import { PageCard } from "../components/PageCard";
@@ -7,9 +7,11 @@ import { ParticipantPane } from "../components/ParticipantPane";
 import { FourLsBoard } from "../components/FourLsBoard";
 import { usePresence } from "../hooks/usePresence";
 import { useRetro } from "../hooks/useRetro";
+import { downloadRetroPdf } from "../lib/exportRetroPdf";
 import { formatRetroCreatedAt } from "../lib/formatDate";
-import { getPhaseLabel } from "../lib/phases";
+import { getPhaseLabel, isResultsPhase } from "../lib/phases";
 import {
+  endRetro,
   getJoinUrl,
   getParticipantSession,
   startRetro,
@@ -19,6 +21,7 @@ import {
 
 export function SessionPage() {
   const { retroId } = useParams<{ retroId: string }>();
+  const navigate = useNavigate();
   const currentParticipantId = retroId
     ? getParticipantSession(retroId)
     : null;
@@ -31,6 +34,8 @@ export function SessionPage() {
   const [startVotingError, setStartVotingError] = useState<string | null>(null);
   const [closingVoting, setClosingVoting] = useState(false);
   const [closeVotingError, setCloseVotingError] = useState<string | null>(null);
+  const [endingRetro, setEndingRetro] = useState(false);
+  const [endRetroError, setEndRetroError] = useState<string | null>(null);
 
   if (!retroId) {
     return (
@@ -88,7 +93,7 @@ export function SessionPage() {
   const isAssembly = phase === "assembly";
   const isActive = phase === "active";
   const isVoting = phase === "voting";
-  const isResults = phase === "results";
+  const isResults = isResultsPhase(phase);
 
   async function handleStartRetro() {
     if (!retroId || starting || !isInitiator || !isAssembly) return;
@@ -135,6 +140,23 @@ export function SessionPage() {
     }
   }
 
+  async function handleEndRetro() {
+    if (!retroId || !retro || endingRetro || !isInitiator || !isResults) return;
+    setEndingRetro(true);
+    setEndRetroError(null);
+    try {
+      downloadRetroPdf(retro);
+      await endRetro(retroId);
+      navigate("/");
+    } catch (err) {
+      setEndRetroError(
+        err instanceof Error ? err.message : "Could not end retrospective.",
+      );
+    } finally {
+      setEndingRetro(false);
+    }
+  }
+
   return (
     <div className="session-layout">
       <ParticipantPane
@@ -175,15 +197,24 @@ export function SessionPage() {
                   {closingVoting ? "Closing…" : "Close Voting"}
                 </Button>
               )}
+              {isInitiator && isResults && (
+                <Button
+                  className="session-top__phase-btn"
+                  disabled={endingRetro}
+                  onClick={handleEndRetro}
+                >
+                  {endingRetro ? "Exporting…" : "End Retrospective"}
+                </Button>
+              )}
             </div>
-            {(startVotingError || closeVotingError) && (
+            {(startVotingError || closeVotingError || endRetroError) && (
               <p className="error-text session-top__phase-error">
-                {startVotingError ?? closeVotingError}
+                {startVotingError ?? closeVotingError ?? endRetroError}
               </p>
             )}
           </section>
 
-          {isInitiator && (
+          {isInitiator && (isAssembly || isActive) && (
             <section className="session-top__card session-top__invite">
               <h2 className="session-top__invite-title">Invite your team</h2>
               <p className="session-top__invite-text">
