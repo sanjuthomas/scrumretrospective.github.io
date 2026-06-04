@@ -1,4 +1,4 @@
-import { fetchRetro, saveRetro } from "./retroApi";
+import { addRetroCard, fetchRetro, saveRetro } from "./retroApi";
 
 export interface Participant {
   id: string;
@@ -13,12 +13,23 @@ export interface Participant {
 
 export type RetroPhase = "assembly" | "active";
 
+export type FourLsColumn = "liked" | "learned" | "lacked" | "longedFor";
+
+export interface RetroCard {
+  id: string;
+  column: FourLsColumn;
+  text: string;
+  authorId: string;
+  createdAt: number;
+}
+
 export interface Retrospective {
   id: string;
   name: string;
   createdAt: number;
   participants: Participant[];
   phase?: RetroPhase;
+  cards?: RetroCard[];
 }
 
 const PARTICIPANT_SESSION_PREFIX = "scrum-retro-participant:";
@@ -58,6 +69,7 @@ export async function createRetro(
     name: retroName.trim(),
     createdAt: Date.now(),
     phase: "assembly",
+    cards: [],
     participants: [
       {
         id: participantId,
@@ -135,11 +147,35 @@ export async function startRetro(
   const retro = await fetchRetroFresh(retroId);
   if (!retro) return null;
 
-  const updated: Retrospective = { ...retro, phase: "active" };
+  const updated: Retrospective = {
+    ...retro,
+    phase: "active",
+    cards: retro.cards ?? [],
+  };
   cacheRetro(updated);
   const saved = await saveRetro(updated);
   if (!saved) {
     throw new Error("Could not start retrospective. Is the sync server running?");
+  }
+  return updated;
+}
+
+export async function addCard(
+  retroId: string,
+  participantId: string,
+  column: FourLsColumn,
+  text: string,
+): Promise<Retrospective | null> {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const updated = await addRetroCard(retroId, {
+    participantId,
+    column,
+    text: trimmed,
+  });
+  if (updated) {
+    cacheRetro(updated);
   }
   return updated;
 }
@@ -154,6 +190,10 @@ function participantPresenceKey(retro: Retrospective): string {
     .join("|");
 }
 
+function cardsKey(retro: Retrospective): string {
+  return JSON.stringify(retro.cards ?? []);
+}
+
 function retroChanged(
   prev: Retrospective | null,
   next: Retrospective | null,
@@ -166,6 +206,7 @@ function retroChanged(
   if (participantPresenceKey(prev) !== participantPresenceKey(next)) {
     return true;
   }
+  if (cardsKey(prev) !== cardsKey(next)) return true;
   return (
     JSON.stringify(prev.participants.map((p) => p.fullName)) !==
     JSON.stringify(next.participants.map((p) => p.fullName))

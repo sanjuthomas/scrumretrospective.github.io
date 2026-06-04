@@ -4,6 +4,7 @@ import { Button } from "../components/Button";
 import { CopyLinkButton } from "../components/CopyLinkButton";
 import { PageCard } from "../components/PageCard";
 import { ParticipantPane } from "../components/ParticipantPane";
+import { FourLsBoard } from "../components/FourLsBoard";
 import { usePresence } from "../hooks/usePresence";
 import { useRetro } from "../hooks/useRetro";
 import { formatRetroCreatedAt } from "../lib/formatDate";
@@ -130,11 +131,20 @@ export function SessionPage() {
             </section>
           )}
 
-          {!isInitiator && currentParticipantId && (
+          {!isInitiator && currentParticipantId && isAssembly && (
             <section className="session-top__card session-top__aside">
               <p className="session-top__invite-text">
                 You have joined the retrospective. Waiting for the facilitator
                 to continue.
+              </p>
+            </section>
+          )}
+
+          {!isInitiator && currentParticipantId && !isAssembly && (
+            <section className="session-top__card session-top__aside">
+              <p className="session-top__invite-text">
+                The retrospective is in progress. Add your items to the board
+                below.
               </p>
             </section>
           )}
@@ -167,6 +177,14 @@ export function SessionPage() {
               )}
             </div>
           </div>
+        )}
+
+        {!isAssembly && (
+          <FourLsBoard
+            retro={retro}
+            retroId={retroId}
+            currentParticipantId={currentParticipantId}
+          />
         )}
       </main>
     </div>

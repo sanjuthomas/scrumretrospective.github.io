@@ -1,7 +1,15 @@
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 
 const PORT = Number(process.env.SYNC_PORT) || 8787;
 const PRESENCE_TIMEOUT_MS = 12000;
+
+const VALID_FOUR_LS_COLUMNS = new Set([
+  "liked",
+  "learned",
+  "lacked",
+  "longedFor",
+]);
 
 const rooms = new Map();
 
@@ -61,6 +69,7 @@ function isOnline(lastSeen) {
 function enrichRoomWithPresence(room) {
   return {
     ...room,
+    cards: room.cards ?? [],
     participants: room.participants.map((p) => ({
       id: p.id,
       fullName: p.fullName,
@@ -151,6 +160,65 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  const cardMatch = url.pathname.match(
+    /^\/api\/retrospectives\/([^/]+)\/cards$/,
+  );
+  if (cardMatch && req.method === "POST") {
+    const roomId = decodeURIComponent(cardMatch[1]);
+    try {
+      const body = await readBody(req);
+      const participantId = body?.participantId;
+      const column = body?.column;
+      const text = typeof body?.text === "string" ? body.text.trim() : "";
+
+      if (!participantId || !column || !text) {
+        send(
+          res,
+          400,
+          { error: "participantId, column, and text are required" },
+          origin,
+        );
+        return;
+      }
+      if (!VALID_FOUR_LS_COLUMNS.has(column)) {
+        send(res, 400, { error: "Invalid column" }, origin);
+        return;
+      }
+
+      const room = rooms.get(roomId);
+      if (!room) {
+        send(res, 404, { error: "Not found" }, origin);
+        return;
+      }
+      if ((room.phase ?? "assembly") !== "active") {
+        send(res, 403, { error: "Retrospective has not started yet" }, origin);
+        return;
+      }
+      if (!room.participants?.some((p) => p.id === participantId)) {
+        send(res, 403, { error: "Participant not found" }, origin);
+        return;
+      }
+
+      const card = {
+        id: randomUUID(),
+        column,
+        text,
+        authorId: participantId,
+        createdAt: Date.now(),
+      };
+      const updated = {
+        ...room,
+        cards: [...(room.cards ?? []), card],
+      };
+      rooms.set(roomId, updated);
+      send(res, 200, enrichRoomWithPresence(updated), origin);
+      return;
+    } catch {
+      send(res, 400, { error: "Invalid JSON" }, origin);
+      return;
+    }
+  }
+
   const match = url.pathname.match(/^\/api\/retrospectives\/([^/]+)$/);
   if (!match) {
     send(res, 404, { error: "Not found" }, origin);
@@ -186,6 +254,12 @@ const server = createServer(async (req, res) => {
           ...p,
           lastSeen: lastSeenById.get(p.id),
         }));
+        if (!stripped.cards) {
+          stripped.cards = existing.cards ?? [];
+        }
+      }
+      if (!stripped.cards) {
+        stripped.cards = [];
       }
       rooms.set(id, stripped);
       send(res, 200, enrichRoomWithPresence(rooms.get(id)), origin);

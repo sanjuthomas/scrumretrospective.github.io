@@ -1,4 +1,4 @@
-import type { Retrospective } from "./retroStore";
+import type { FourLsColumn, Retrospective } from "./retroStore";
 
 const API_BASE =
   import.meta.env.VITE_SYNC_API_URL?.replace(/\/$/, "") ?? "/api";
@@ -46,6 +46,34 @@ export async function sendPresenceHeartbeat(
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+export async function addRetroCard(
+  retroId: string,
+  payload: {
+    participantId: string;
+    column: FourLsColumn;
+    text: string;
+  },
+): Promise<Retrospective | null> {
+  try {
+    const res = await fetch(`${API_BASE}/retrospectives/${retroId}/cards`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      throw new Error(body?.error ?? `add card failed: ${res.status}`);
+    }
+    return (await res.json()) as Retrospective;
+  } catch (err) {
+    if (err instanceof Error) throw err;
+    return null;
   }
 }
 
