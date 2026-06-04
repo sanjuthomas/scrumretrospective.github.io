@@ -25,9 +25,12 @@ export function FourLsBoard({
   const cards = retro.cards ?? [];
   const isActive = phase === "active";
   const isVoting = phase === "voting";
+  const isResults = phase === "results";
   const canAdd = isActive && Boolean(currentParticipantId);
   const canVote = isVoting && Boolean(currentParticipantId);
+  const showResults = isResults;
   const myVotes = retro.myVotes ?? {};
+  const cardVoteCounts = retro.cardVoteCounts ?? {};
   const participantsById = new Map(
     retro.participants.map((p) => [p.id, p]),
   );
@@ -70,6 +73,9 @@ export function FourLsBoard({
       "Vote on items from other participants. Vote counts stay hidden during this phase.";
   } else if (isVoting) {
     subtitle = "Voting is in progress. Join to cast your votes.";
+  } else if (isResults) {
+    subtitle =
+      "Voting is closed. Items are sorted by net votes (up minus down) in each column.";
   }
 
   return (
@@ -87,8 +93,10 @@ export function FourLsBoard({
             participantsById={participantsById}
             canAdd={canAdd}
             canVote={canVote}
+            showResults={showResults}
             currentParticipantId={currentParticipantId}
             myVotes={myVotes}
+            cardVoteCounts={cardVoteCounts}
             onAdd={(text) => handleAdd(column.id, text)}
             onVote={handleVote}
           />

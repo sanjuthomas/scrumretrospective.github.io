@@ -86,8 +86,9 @@ function enrichRoomWithPresence(room) {
 function enrichRoomForClient(room, participantId) {
   const enriched = enrichRoomWithPresence(room);
   const { votes: _votes, ...clientRoom } = enriched;
+  const phase = room.phase ?? "assembly";
 
-  if (participantId && (room.phase ?? "assembly") === "voting") {
+  if (participantId && phase === "voting") {
     const myVotes = {};
     for (const vote of room.votes ?? []) {
       if (vote.participantId === participantId) {
@@ -97,7 +98,26 @@ function enrichRoomForClient(room, participantId) {
     clientRoom.myVotes = myVotes;
   }
 
+  if (phase === "results") {
+    clientRoom.cardVoteCounts = computeCardVoteCounts(room.votes);
+  }
+
   return clientRoom;
+}
+
+function computeCardVoteCounts(votes) {
+  const counts = {};
+  for (const vote of votes ?? []) {
+    if (!counts[vote.cardId]) {
+      counts[vote.cardId] = { up: 0, down: 0 };
+    }
+    if (vote.value === "up") {
+      counts[vote.cardId].up += 1;
+    } else if (vote.value === "down") {
+      counts[vote.cardId].down += 1;
+    }
+  }
+  return counts;
 }
 
 function updateParticipantLastSeen(room, participantId, lastSeen) {
@@ -359,6 +379,7 @@ const server = createServer(async (req, res) => {
       const stripped = stripEphemeralFields(body);
       delete stripped.votes;
       delete stripped.myVotes;
+      delete stripped.cardVoteCounts;
 
       if (existing) {
         const lastSeenById = new Map(
@@ -385,6 +406,22 @@ const server = createServer(async (req, res) => {
           return;
         }
         if (nextPhase === "active" && existingPhase === "voting") {
+          send(res, 403, { error: "Cannot return to retrospective phase" }, origin);
+          return;
+        }
+        if (
+          nextPhase === "results" &&
+          existingPhase !== "voting" &&
+          existingPhase !== "results"
+        ) {
+          send(res, 403, { error: "Close voting before viewing results" }, origin);
+          return;
+        }
+        if (nextPhase === "voting" && existingPhase === "results") {
+          send(res, 403, { error: "Voting is already closed" }, origin);
+          return;
+        }
+        if (nextPhase === "active" && existingPhase === "results") {
           send(res, 403, { error: "Cannot return to retrospective phase" }, origin);
           return;
         }

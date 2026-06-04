@@ -8,5 +8,7 @@ export function getPhaseLabel(phase: RetroPhase | undefined): string {
       return "Phase 2 — Retrospective";
     case "voting":
       return "Phase 3 — Voting";
+    case "results":
+      return "Phase 4 — Results";
   }
 }

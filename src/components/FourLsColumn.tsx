@@ -1,8 +1,15 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import type { FourLsColumnDef } from "../lib/fourLs";
-import type { Participant, RetroCard, VoteValue } from "../lib/retroStore";
+import type {
+  Participant,
+  RetroCard,
+  VoteValue,
+} from "../lib/retroStore";
+import type { CardVoteCounts as CardVoteCountsType } from "../lib/votes";
+import { effectiveVote } from "../lib/votes";
 import { Button } from "./Button";
 import { CardVoteButtons } from "./CardVoteButtons";
+import { CardVoteCounts } from "./CardVoteCounts";
 
 interface FourLsColumnProps {
   column: FourLsColumnDef;
@@ -10,8 +17,10 @@ interface FourLsColumnProps {
   participantsById: Map<string, Participant>;
   canAdd: boolean;
   canVote: boolean;
+  showResults: boolean;
   currentParticipantId: string | null;
   myVotes: Partial<Record<string, VoteValue>>;
+  cardVoteCounts: Partial<Record<string, CardVoteCountsType>>;
   onAdd: (text: string) => Promise<void>;
   onVote: (cardId: string, value: VoteValue) => Promise<void>;
 }
@@ -22,8 +31,10 @@ export function FourLsColumn({
   participantsById,
   canAdd,
   canVote,
+  showResults,
   currentParticipantId,
   myVotes,
+  cardVoteCounts,
   onAdd,
   onVote,
 }: FourLsColumnProps) {
@@ -62,7 +73,18 @@ export function FourLsColumn({
     }
   }
 
-  const sortedCards = [...cards].sort((a, b) => a.createdAt - b.createdAt);
+  const sortedCards = useMemo(() => {
+    if (showResults) {
+      return [...cards].sort((a, b) => {
+        const scoreDiff =
+          effectiveVote(cardVoteCounts[b.id]) -
+          effectiveVote(cardVoteCounts[a.id]);
+        if (scoreDiff !== 0) return scoreDiff;
+        return a.createdAt - b.createdAt;
+      });
+    }
+    return [...cards].sort((a, b) => a.createdAt - b.createdAt);
+  }, [cards, showResults, cardVoteCounts]);
 
   return (
     <section className="four-ls-column" aria-labelledby={`column-${column.id}`}>
@@ -79,6 +101,7 @@ export function FourLsColumn({
           const isOwnCard =
             currentParticipantId != null && card.authorId === currentParticipantId;
           const showVoteButtons = canVote && !isOwnCard;
+          const counts = cardVoteCounts[card.id] ?? { up: 0, down: 0 };
 
           return (
             <li key={card.id} className="four-ls-card">
@@ -96,6 +119,7 @@ export function FourLsColumn({
                   onVote={handleVote}
                 />
               )}
+              {showResults && <CardVoteCounts counts={counts} />}
             </li>
           );
         })}

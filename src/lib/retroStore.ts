@@ -1,4 +1,5 @@
 import { addRetroCard, castRetroVote, fetchRetro, saveRetro } from "./retroApi";
+import type { CardVoteCounts } from "./votes";
 
 export interface Participant {
   id: string;
@@ -11,7 +12,7 @@ export interface Participant {
   lastSeen?: number;
 }
 
-export type RetroPhase = "assembly" | "active" | "voting";
+export type RetroPhase = "assembly" | "active" | "voting" | "results";
 
 export type VoteValue = "up" | "down";
 
@@ -34,6 +35,8 @@ export interface Retrospective {
   cards?: RetroCard[];
   /** Current participant's votes during voting; counts are never exposed */
   myVotes?: Partial<Record<string, VoteValue>>;
+  /** Aggregated vote totals per card after voting closes */
+  cardVoteCounts?: Partial<Record<string, CardVoteCounts>>;
 }
 
 const PARTICIPANT_SESSION_PREFIX = "scrum-retro-participant:";
@@ -91,7 +94,8 @@ export async function createRetro(
   if (!saved) {
     throw new Error("Could not save retrospective. Is the sync server running?");
   }
-  return { retro, participantId };
+  cacheRetro(saved);
+  return { retro: saved, participantId };
 }
 
 export async function addParticipant(
@@ -127,7 +131,8 @@ export async function addParticipant(
   if (!saved) {
     throw new Error("Could not join retrospective. Is the sync server running?");
   }
-  return { retro: updated, participantId };
+  cacheRetro(saved);
+  return { retro: saved, participantId };
 }
 
 export function saveParticipantSession(
@@ -164,7 +169,8 @@ export async function startRetro(
   if (!saved) {
     throw new Error("Could not start retrospective. Is the sync server running?");
   }
-  return updated;
+  cacheRetro(saved);
+  return saved;
 }
 
 export async function startVoting(
@@ -186,7 +192,34 @@ export async function startVoting(
   if (!saved) {
     throw new Error("Could not start voting. Is the sync server running?");
   }
-  return updated;
+  cacheRetro(saved);
+  return saved;
+}
+
+export async function closeVoting(
+  retroId: string,
+  participantId?: string | null,
+): Promise<Retrospective | null> {
+  const retro = await fetchRetroFresh(retroId, participantId);
+  if (!retro) return null;
+  if ((retro.phase ?? "assembly") !== "voting") {
+    throw new Error("Voting can only be closed while voting is in progress.");
+  }
+
+  const updated: Retrospective = {
+    ...retro,
+    phase: "results",
+    cards: retro.cards ?? [],
+  };
+  const saved = await saveRetro(updated);
+  if (!saved) {
+    throw new Error("Could not close voting. Is the sync server running?");
+  }
+  cacheRetro(saved);
+  if (saved.cardVoteCounts != null) {
+    return saved;
+  }
+  return fetchRetroFresh(retroId, participantId);
 }
 
 export async function addCard(
@@ -244,6 +277,10 @@ function myVotesKey(retro: Retrospective): string {
   return JSON.stringify(retro.myVotes ?? {});
 }
 
+function cardVoteCountsKey(retro: Retrospective): string {
+  return JSON.stringify(retro.cardVoteCounts ?? {});
+}
+
 function retroChanged(
   prev: Retrospective | null,
   next: Retrospective | null,
@@ -258,6 +295,7 @@ function retroChanged(
   }
   if (cardsKey(prev) !== cardsKey(next)) return true;
   if (myVotesKey(prev) !== myVotesKey(next)) return true;
+  if (cardVoteCountsKey(prev) !== cardVoteCountsKey(next)) return true;
   return (
     JSON.stringify(prev.participants.map((p) => p.fullName)) !==
     JSON.stringify(next.participants.map((p) => p.fullName))

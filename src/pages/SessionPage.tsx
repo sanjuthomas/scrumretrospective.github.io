@@ -14,6 +14,7 @@ import {
   getParticipantSession,
   startRetro,
   startVoting,
+  closeVoting,
 } from "../lib/retroStore";
 
 export function SessionPage() {
@@ -28,6 +29,8 @@ export function SessionPage() {
   const [startError, setStartError] = useState<string | null>(null);
   const [startingVoting, setStartingVoting] = useState(false);
   const [startVotingError, setStartVotingError] = useState<string | null>(null);
+  const [closingVoting, setClosingVoting] = useState(false);
+  const [closeVotingError, setCloseVotingError] = useState<string | null>(null);
 
   if (!retroId) {
     return (
@@ -85,6 +88,7 @@ export function SessionPage() {
   const isAssembly = phase === "assembly";
   const isActive = phase === "active";
   const isVoting = phase === "voting";
+  const isResults = phase === "results";
 
   async function handleStartRetro() {
     if (!retroId || starting || !isInitiator || !isAssembly) return;
@@ -113,6 +117,21 @@ export function SessionPage() {
       );
     } finally {
       setStartingVoting(false);
+    }
+  }
+
+  async function handleCloseVoting() {
+    if (!retroId || closingVoting || !isInitiator || !isVoting) return;
+    setClosingVoting(true);
+    setCloseVotingError(null);
+    try {
+      await closeVoting(retroId, currentParticipantId);
+    } catch (err) {
+      setCloseVotingError(
+        err instanceof Error ? err.message : "Could not close voting.",
+      );
+    } finally {
+      setClosingVoting(false);
     }
   }
 
@@ -147,10 +166,19 @@ export function SessionPage() {
                   {startingVoting ? "Starting…" : "Start Voting"}
                 </Button>
               )}
+              {isInitiator && isVoting && (
+                <Button
+                  className="session-top__phase-btn"
+                  disabled={closingVoting}
+                  onClick={handleCloseVoting}
+                >
+                  {closingVoting ? "Closing…" : "Close Voting"}
+                </Button>
+              )}
             </div>
-            {startVotingError && (
+            {(startVotingError || closeVotingError) && (
               <p className="error-text session-top__phase-error">
-                {startVotingError}
+                {startVotingError ?? closeVotingError}
               </p>
             )}
           </section>
@@ -189,6 +217,15 @@ export function SessionPage() {
               <p className="session-top__invite-text">
                 Voting is open. Use the thumbs up or down buttons on items from
                 other participants.
+              </p>
+            </section>
+          )}
+
+          {!isInitiator && currentParticipantId && isResults && (
+            <section className="session-top__card session-top__aside">
+              <p className="session-top__invite-text">
+                Voting is closed. Review the results sorted by net votes in each
+                column.
               </p>
             </section>
           )}

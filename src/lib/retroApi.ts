@@ -20,8 +20,8 @@ export async function fetchRetro(
   }
 }
 
-export async function saveRetro(retro: Retrospective): Promise<boolean> {
-  const { myVotes: _myVotes, ...rest } = retro;
+export async function saveRetro(retro: Retrospective): Promise<Retrospective | null> {
+  const { myVotes: _myVotes, cardVoteCounts: _cardVoteCounts, ...rest } = retro;
   const payload = {
     ...rest,
     participants: retro.participants.map(
@@ -34,9 +34,10 @@ export async function saveRetro(retro: Retrospective): Promise<boolean> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    return res.ok;
+    if (!res.ok) return null;
+    return (await res.json()) as Retrospective;
   } catch {
-    return false;
+    return null;
   }
 }
 
