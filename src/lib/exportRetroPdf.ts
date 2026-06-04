@@ -45,9 +45,9 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
   const participantsById = new Map(
     retro.participants.map((p) => [p.id, p.fullName]),
   );
-  const initiator = retro.participants.find((p) => p.isInitiator);
+  const facilitator = retro.participants.find((p) => p.isFacilitator);
   const sortedParticipants = [...retro.participants].sort((a, b) => {
-    if (a.isInitiator !== b.isInitiator) return a.isInitiator ? -1 : 1;
+    if (a.isFacilitator !== b.isFacilitator) return a.isFacilitator ? -1 : 1;
     return a.joinedAt - b.joinedAt;
   });
 
@@ -60,7 +60,7 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
   doc.setFont("helvetica", "normal");
   y = writeLines(
     doc,
-    `Initiator: ${initiator?.fullName ?? "Unknown"}`,
+    `Facilitator: ${facilitator?.fullName ?? "Unknown"}`,
     PAGE_MARGIN,
     y,
     contentWidth,
@@ -95,8 +95,8 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
   y = writeLines(doc, "Participants", PAGE_MARGIN, y, contentWidth, 12);
   doc.setFont("helvetica", "normal");
   for (const participant of sortedParticipants) {
-    const label = participant.isInitiator
-      ? `${participant.fullName} (Initiator)`
+    const label = participant.isFacilitator
+      ? `${participant.fullName} (Facilitator)`
       : participant.fullName;
     y = writeLines(doc, `• ${label}`, PAGE_MARGIN + 4, y, contentWidth - 4, 10);
   }

@@ -4,7 +4,7 @@ import type { CardVoteCounts } from "./votes";
 export interface Participant {
   id: string;
   fullName: string;
-  isInitiator: boolean;
+  isFacilitator: boolean;
   joinedAt: number;
   /** Set by sync server from presence heartbeats; defaults to false when absent */
   online?: boolean;
@@ -74,7 +74,7 @@ export async function loadRetro(id: string): Promise<Retrospective | null> {
 
 export async function createRetro(
   retroName: string,
-  initiatorFullName: string,
+  facilitatorFullName: string,
 ): Promise<{ retro: Retrospective; participantId: string }> {
   const id = crypto.randomUUID();
   const participantId = crypto.randomUUID();
@@ -87,8 +87,8 @@ export async function createRetro(
     participants: [
       {
         id: participantId,
-        fullName: initiatorFullName.trim(),
-        isInitiator: true,
+        fullName: facilitatorFullName.trim(),
+        isFacilitator: true,
         joinedAt: Date.now(),
       },
     ],
@@ -125,7 +125,7 @@ export async function addParticipant(
       {
         id: participantId,
         fullName: trimmed,
-        isInitiator: false,
+        isFacilitator: false,
         joinedAt: Date.now(),
       },
     ],

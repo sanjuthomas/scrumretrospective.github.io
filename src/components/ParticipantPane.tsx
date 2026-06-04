@@ -11,7 +11,7 @@ export function ParticipantPane({
   currentParticipantId,
 }: ParticipantPaneProps) {
   const sorted = [...participants].sort((a, b) => {
-    if (a.isInitiator !== b.isInitiator) return a.isInitiator ? -1 : 1;
+    if (a.isFacilitator !== b.isFacilitator) return a.isFacilitator ? -1 : 1;
     return a.joinedAt - b.joinedAt;
   });
 
@@ -33,8 +33,8 @@ export function ParticipantPane({
               <PresenceIcon online={Boolean(p.online)} />
               <span className="participant-pane__name">{p.fullName}</span>
             </div>
-            {p.isInitiator && (
-              <span className="participant-pane__badge">Initiator</span>
+            {p.isFacilitator && (
+              <span className="participant-pane__badge">Facilitator</span>
             )}
             {p.id === currentParticipantId && (
               <span className="participant-pane__badge participant-pane__badge--you">

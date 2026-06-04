@@ -64,7 +64,7 @@ export function JoinPage() {
       <main className="center-page">
         <PageCard title="Retrospective not found">
           <p className="muted">
-            This link is invalid, or the session has ended. Ask the initiator
+            This link is invalid, or the session has ended. Ask the facilitator
             for a new join link and make sure the app is running with the sync
             server.
           </p>

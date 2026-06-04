@@ -4,7 +4,7 @@ Static web app for [scrumretrospective.org](https://scrumretrospective.org) — 
 
 ## Overview
 
-Facilitators create a session, invite the team via a join link, and guide the retro through four phases: team assembly, item collection, voting, and results. When the initiator ends the session, results export as a PDF and the room is removed from the sync server.
+Facilitators create a session, invite the team via a join link, and guide the retro through four phases: team assembly, item collection, voting, and results. When the facilitator ends the session, results export as a PDF and the room is removed from the sync server.
 
 **4Ls columns:** Liked · Learned · Lacked · Longed For
 
@@ -12,45 +12,16 @@ Facilitators create a session, invite the team via a join link, and guide the re
 
 | Phase | Name | What happens |
 |-------|------|----------------|
-| 1 | Team assembly | Initiator creates the retro and shares the join link. Participants join with their name. |
-| 2 | Retrospective | Initiator starts the board. Everyone adds items to any 4L column. |
-| 3 | Voting | Initiator opens voting. Participants vote up/down on **other people's** items. Vote totals stay hidden. |
-| 4 | Results | Initiator closes voting. Items show up/down counts, sorted by net vote in each column. Initiator can export PDF and end the session. |
+| 1 | Team assembly | Facilitator creates the retro and shares the join link. Participants join with their name. |
+| 2 | Retrospective | Facilitator starts the board. Everyone adds items to any 4L column. |
+| 3 | Voting | Facilitator opens voting. Participants vote up/down on **other people's** items. Vote totals stay hidden. |
+| 4 | Results | Facilitator closes voting. Items show up/down counts, sorted by net vote in each column. Facilitator can export PDF and end the session. |
 
 ## Actors & activities
 
-```mermaid
-mindmap
-  root((Scrum Retrospective))
-    Initiator
-      Phase 1 Assembly
-        Create retro and title
-        Copy join link
-        Wait for team
-        Start retrospective
-      Phase 2 Retrospective
-        Add items to 4L columns
-        Start voting
-      Phase 3 Voting
-        Vote on others items
-        Close voting
-      Phase 4 Results
-        Review sorted results
-        End retro and export PDF
-    Participant
-      Phase 1 Assembly
-        Open join link
-        Enter full name
-        Wait for facilitator
-      Phase 2 Retrospective
-        Add items to 4L columns
-      Phase 3 Voting
-        Vote up or down on others items
-        Cannot vote on own items
-      Phase 4 Results
-        View vote counts and ranking
-        Session ends when initiator exports
-```
+![Facilitator and participant flow across all four retrospective phases](docs/images/retro-actors-flow.png)
+
+*Facilitator (left) and participant (right) actions from team assembly through PDF export.*
 
 ## Features
 
@@ -58,8 +29,8 @@ mindmap
 - **Live sync** — sync API + 1s polling keeps participants, items, and votes in sync across browsers
 - **Presence** — online indicators in the participant sidebar
 - **Private voting** — only your own votes are visible during Phase 3; totals appear after close
-- **PDF export** — retro name, initiator, start/end time, duration, participants, and all items (4Ls stacked vertically, sorted by net vote)
-- **Ephemeral storage** — in-memory on the sync server; deleted when the initiator ends the retro
+- **PDF export** — retro name, facilitator, start/end time, duration, participants, and all items (4Ls stacked vertically, sorted by net vote)
+- **Ephemeral storage** — in-memory on the sync server; deleted when the facilitator ends the retro
 
 ## Development
 
@@ -115,7 +86,7 @@ Votes are stored server-side during the session. Clients receive aggregated coun
 | Path | Purpose |
 |------|---------|
 | `/` | Landing |
-| `/initiate` | Initiator setup form |
+| `/initiate` | Facilitator setup form |
 | `/retro/:id` | Active session |
 | `/join/:id` | Participant join form |
 

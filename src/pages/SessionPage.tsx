@@ -65,7 +65,7 @@ export function SessionPage() {
         <PageCard title="Session not found">
           <p className="muted">
             This retrospective is not available in your browser. If you are the
-            initiator, start a new one. If you are a participant, use the join
+            facilitator, start a new one. If you are a participant, use the join
             link from your facilitator.
           </p>
           <Link className="text-link" to="/">
@@ -77,8 +77,8 @@ export function SessionPage() {
   }
 
   const joinUrl = getJoinUrl(retroId);
-  const isInitiator = retro.participants.some(
-    (p) => p.id === currentParticipantId && p.isInitiator,
+  const isFacilitator = retro.participants.some(
+    (p) => p.id === currentParticipantId && p.isFacilitator,
   );
 
   const participants = retro.participants.map((p) => ({
@@ -88,7 +88,7 @@ export function SessionPage() {
       (currentParticipantId != null && p.id === currentParticipantId),
   }));
 
-  const initiator = retro.participants.find((p) => p.isInitiator);
+  const facilitator = retro.participants.find((p) => p.isFacilitator);
   const phase = retro.phase ?? "assembly";
   const isAssembly = phase === "assembly";
   const isActive = phase === "active";
@@ -96,7 +96,7 @@ export function SessionPage() {
   const isResults = isResultsPhase(phase);
 
   async function handleStartRetro() {
-    if (!retroId || starting || !isInitiator || !isAssembly) return;
+    if (!retroId || starting || !isFacilitator || !isAssembly) return;
     setStarting(true);
     setStartError(null);
     try {
@@ -111,7 +111,7 @@ export function SessionPage() {
   }
 
   async function handleStartVoting() {
-    if (!retroId || startingVoting || !isInitiator || !isActive) return;
+    if (!retroId || startingVoting || !isFacilitator || !isActive) return;
     setStartingVoting(true);
     setStartVotingError(null);
     try {
@@ -126,7 +126,7 @@ export function SessionPage() {
   }
 
   async function handleCloseVoting() {
-    if (!retroId || closingVoting || !isInitiator || !isVoting) return;
+    if (!retroId || closingVoting || !isFacilitator || !isVoting) return;
     setClosingVoting(true);
     setCloseVotingError(null);
     try {
@@ -141,7 +141,7 @@ export function SessionPage() {
   }
 
   async function handleEndRetro() {
-    if (!retroId || !retro || endingRetro || !isInitiator || !isResults) return;
+    if (!retroId || !retro || endingRetro || !isFacilitator || !isResults) return;
     setEndingRetro(true);
     setEndRetroError(null);
     try {
@@ -169,8 +169,8 @@ export function SessionPage() {
             <h1 className="session-top__title">{retro.name}</h1>
             <dl className="session-details">
               <div className="session-details__row">
-                <dt>Initiator</dt>
-                <dd>{initiator?.fullName ?? "—"}</dd>
+                <dt>Facilitator</dt>
+                <dd>{facilitator?.fullName ?? "—"}</dd>
               </div>
               <div className="session-details__row">
                 <dt>Created</dt>
@@ -179,7 +179,7 @@ export function SessionPage() {
             </dl>
             <div className="session-top__phase-row">
               <p className="session-top__phase">{getPhaseLabel(phase)}</p>
-              {isInitiator && isActive && (
+              {isFacilitator && isActive && (
                 <Button
                   className="session-top__phase-btn"
                   disabled={startingVoting}
@@ -188,7 +188,7 @@ export function SessionPage() {
                   {startingVoting ? "Starting…" : "Start Voting"}
                 </Button>
               )}
-              {isInitiator && isVoting && (
+              {isFacilitator && isVoting && (
                 <Button
                   className="session-top__phase-btn"
                   disabled={closingVoting}
@@ -197,7 +197,7 @@ export function SessionPage() {
                   {closingVoting ? "Closing…" : "Close Voting"}
                 </Button>
               )}
-              {isInitiator && isResults && (
+              {isFacilitator && isResults && (
                 <Button
                   className="session-top__phase-btn"
                   disabled={endingRetro}
@@ -214,7 +214,7 @@ export function SessionPage() {
             )}
           </section>
 
-          {isInitiator && (isAssembly || isActive) && (
+          {isFacilitator && (isAssembly || isActive) && (
             <section className="session-top__card session-top__invite">
               <h2 className="session-top__invite-title">Invite your team</h2>
               <p className="session-top__invite-text">
@@ -225,7 +225,7 @@ export function SessionPage() {
             </section>
           )}
 
-          {!isInitiator && currentParticipantId && isAssembly && (
+          {!isFacilitator && currentParticipantId && isAssembly && (
             <section className="session-top__card session-top__aside">
               <p className="session-top__invite-text">
                 You have joined the retrospective. Waiting for the facilitator
@@ -234,7 +234,7 @@ export function SessionPage() {
             </section>
           )}
 
-          {!isInitiator && currentParticipantId && isActive && (
+          {!isFacilitator && currentParticipantId && isActive && (
             <section className="session-top__card session-top__aside">
               <p className="session-top__invite-text">
                 The retrospective is in progress. Add your items to the board
@@ -243,7 +243,7 @@ export function SessionPage() {
             </section>
           )}
 
-          {!isInitiator && currentParticipantId && isVoting && (
+          {!isFacilitator && currentParticipantId && isVoting && (
             <section className="session-top__card session-top__aside">
               <p className="session-top__invite-text">
                 Voting is open. Use the thumbs up or down buttons on items from
@@ -252,7 +252,7 @@ export function SessionPage() {
             </section>
           )}
 
-          {!isInitiator && currentParticipantId && isResults && (
+          {!isFacilitator && currentParticipantId && isResults && (
             <section className="session-top__card session-top__aside">
               <p className="session-top__invite-text">
                 Voting is closed. Review the results sorted by net votes in each
@@ -274,7 +274,7 @@ export function SessionPage() {
           )}
         </div>
 
-        {isInitiator && isAssembly && (
+        {isFacilitator && isAssembly && (
           <div className="session-center">
             <div className="session-center__action">
               <Button

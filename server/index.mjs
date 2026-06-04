@@ -76,7 +76,7 @@ function enrichRoomWithPresence(room) {
     participants: room.participants.map((p) => ({
       id: p.id,
       fullName: p.fullName,
-      isInitiator: p.isInitiator,
+      isFacilitator: p.isFacilitator,
       joinedAt: p.joinedAt,
       online: isOnline(p.lastSeen),
     })),
