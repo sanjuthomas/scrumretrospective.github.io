@@ -142,14 +142,18 @@ Votes are stored server-side during the session. Clients receive aggregated coun
 
 ## API (sync server)
 
+Full reference: **[docs/api.md](docs/api.md)** — request/response shapes, phase rules, templates, errors, and flow.
+
 | Method | Path | Purpose |
 |--------|------|---------|
+| `GET` | `/api/health` | Health check |
 | `GET` | `/api/retrospectives/:id` | Fetch room (optional `?participantId=` for own votes during voting) |
 | `PUT` | `/api/retrospectives/:id` | Create/update room (phase transitions) |
+| `DELETE` | `/api/retrospectives/:id` | End session (remove room) |
+| `POST` | `/api/retrospectives/:id/presence` | Presence heartbeat |
+| `POST` | `/api/retrospectives/:id/presence/leave` | Mark participant offline |
 | `POST` | `/api/retrospectives/:id/cards` | Add item (Phase 2 only) |
 | `POST` | `/api/retrospectives/:id/votes` | Cast vote (Phase 3 only) |
-| `POST` | `/api/retrospectives/:id/presence` | Presence heartbeat |
-| `DELETE` | `/api/retrospectives/:id` | End session (remove room) |
 
 ## Routes
 
