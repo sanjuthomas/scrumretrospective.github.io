@@ -1,4 +1,5 @@
 import { addRetroCard, castRetroVote, deleteRetro, fetchRetro, saveRetro } from "./retroApi";
+import { normalizeParticipant } from "./participants";
 import type { CardVoteCounts } from "./votes";
 
 export interface Participant {
@@ -10,15 +11,6 @@ export interface Participant {
   online?: boolean;
   /** Server-only heartbeat timestamp; never sent from the client */
   lastSeen?: number;
-}
-
-type ParticipantPayload = Participant & { isInitiator?: boolean };
-
-function normalizeParticipant(participant: ParticipantPayload): Participant {
-  return {
-    ...participant,
-    isFacilitator: Boolean(participant.isFacilitator ?? participant.isInitiator),
-  };
 }
 
 function normalizeRetro(retro: Retrospective): Retrospective {

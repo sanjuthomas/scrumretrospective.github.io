@@ -114,6 +114,16 @@ VITE_SYNC_API_URL=https://your-app.up.railway.app/api npm run build
 npm run preview
 ```
 
+## Testing
+
+```bash
+npm test                 # unit tests (runs in GitHub Actions)
+npm run test:watch       # unit tests in watch mode
+npm run test:integration # local end-to-end sync API flow
+```
+
+Integration tests start `server/index.mjs` on a random local port and are intentionally **not** run in CI.
+
 ## Storage model
 
 | Layer | Role |

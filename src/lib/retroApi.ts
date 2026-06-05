@@ -1,7 +1,15 @@
 import type { FourLsColumn, Retrospective, VoteValue } from "./retroStore";
+import { normalizeParticipant } from "./participants";
 
 const API_BASE =
   import.meta.env.VITE_SYNC_API_URL?.replace(/\/$/, "") ?? "/api";
+
+function normalizeRetroParticipants(retro: Retrospective): Retrospective {
+  return {
+    ...retro,
+    participants: retro.participants.map(normalizeParticipant),
+  };
+}
 
 export async function fetchRetro(
   id: string,
@@ -15,15 +23,7 @@ export async function fetchRetro(
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
     const retro = (await res.json()) as Retrospective;
-    return {
-      ...retro,
-      participants: retro.participants.map((p) => ({
-        ...p,
-        isFacilitator: Boolean(
-          p.isFacilitator ?? (p as { isInitiator?: boolean }).isInitiator,
-        ),
-      })),
-    };
+    return normalizeRetroParticipants(retro);
   } catch {
     return null;
   }
@@ -45,15 +45,7 @@ export async function saveRetro(retro: Retrospective): Promise<Retrospective | n
     });
     if (!res.ok) return null;
     const saved = (await res.json()) as Retrospective;
-    return {
-      ...saved,
-      participants: saved.participants.map((p) => ({
-        ...p,
-        isFacilitator: Boolean(
-          p.isFacilitator ?? (p as { isInitiator?: boolean }).isInitiator,
-        ),
-      })),
-    };
+    return normalizeRetroParticipants(saved);
   } catch {
     return null;
   }
