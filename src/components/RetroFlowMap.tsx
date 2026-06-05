@@ -4,11 +4,15 @@ const PHASES = [
     name: "Team Assembly",
     tone: "assembly",
     facilitator: [
-      "Create retro",
+      "Create retrospective",
       "Copy join link and share with the team",
       "Start retrospective",
     ],
-    participant: ["Open join link", "Enter name", "Wait for facilitator"],
+    participant: [
+      "Open join link",
+      "Enter name",
+      "Wait for facilitator to start retrospective",
+    ],
   },
   {
     number: 2,
@@ -31,7 +35,10 @@ const PHASES = [
     number: 4,
     name: "Results",
     tone: "results",
-    facilitator: ["Review results", "End retro and share the report with the team"],
+    facilitator: [
+      "Review results",
+      "End retro and share the PDF report with the team",
+    ],
     participant: ["View ranked results"],
   },
 ] as const;
