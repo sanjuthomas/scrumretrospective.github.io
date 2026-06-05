@@ -163,6 +163,13 @@ Full reference: **[docs/api.md](docs/api.md)** — request/response shapes, phas
 | `/initiate` | Facilitator setup form |
 | `/retro/:id` | Active session |
 | `/join/:id` | Participant join form |
+| `/terms` | Terms of Use |
+| `/license` | MIT License |
+
+## License & terms
+
+- **Source code:** [MIT License](LICENSE)
+- **Hosted service:** [Terms of Use](docs/terms-of-use.md) — as-is, no warranty, no liability; do not submit sensitive or confidential data
 
 ## Tech stack
 

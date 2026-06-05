@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/Button";
 import { PageCard } from "../components/PageCard";
 import {
@@ -94,6 +94,11 @@ export function InitiatePage() {
             </select>
           </label>
           {error && <p className="error-text">{error}</p>}
+          <p className="form__notice">
+            By creating a retrospective, you agree to the{" "}
+            <Link to="/terms">Terms of Use</Link>. Do not enter sensitive or
+            confidential information.
+          </p>
           <Button type="submit" disabled={!canSubmit}>
             {submitting ? "Creating…" : "Create Your Retrospective"}
           </Button>

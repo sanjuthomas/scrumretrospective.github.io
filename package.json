@@ -2,6 +2,7 @@
   "name": "scrum-retrospective",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n sync,web -c blue,green \"npm run dev:sync\" \"npm run dev:web\"",

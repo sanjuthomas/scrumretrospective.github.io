@@ -98,6 +98,10 @@ export function JoinPage() {
             />
           </label>
           {error && <p className="error-text">{error}</p>}
+          <p className="form__notice">
+            By joining, you agree to the <Link to="/terms">Terms of Use</Link>.
+            Do not enter sensitive or confidential information.
+          </p>
           <Button type="submit" disabled={!canSubmit}>
             {submitting ? "Joining…" : `Join ${retro.name} Now!`}
           </Button>
