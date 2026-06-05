@@ -2,6 +2,8 @@ export const COPYRIGHT_OWNER = "Sanju Thomas";
 export const COPYRIGHT_YEAR = "2026";
 export const SITE_NAME = "Scrum Retrospective";
 export const SITE_URL = "https://scrumretrospective.org";
+export const GITHUB_REPO_URL =
+  "https://github.com/sanjuthomas/scrumretrospective.github.io";
 
 export interface LegalSection {
   title: string;
