@@ -20,6 +20,7 @@ interface RetroResponse {
   id: string;
   name: string;
   createdAt: number;
+  template?: string;
   phase?: string;
   participants: Participant[];
   cards?: RetroCard[];
@@ -52,6 +53,7 @@ describe("retro end-to-end flow", () => {
           id: retroId,
           name: "Integration Retro",
           createdAt: Date.now(),
+          template: "fourLs",
           phase: "assembly",
           cards: [],
           participants: [
@@ -264,5 +266,139 @@ describe("retro end-to-end flow", () => {
 
     expect(fetched.status).toBe(200);
     expect(fetched.body.participants[0]?.isFacilitator).toBe(true);
+  });
+
+  it("supports Mad, Sad, Glad columns for that template", async () => {
+    const retroId = crypto.randomUUID();
+    const facilitatorId = crypto.randomUUID();
+
+    const create = await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          id: retroId,
+          name: "MSG Retro",
+          createdAt: Date.now(),
+          template: "madSadGlad",
+          phase: "active",
+          cards: [],
+          participants: [
+            {
+              id: facilitatorId,
+              fullName: "Facilitator",
+              isFacilitator: true,
+              joinedAt: Date.now(),
+            },
+          ],
+        }),
+      },
+    );
+
+    expect(create.status).toBe(200);
+    expect(create.body.template).toBe("madSadGlad");
+
+    const gladCard = await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}/cards`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          participantId: facilitatorId,
+          column: "glad",
+          text: "Great teamwork",
+        }),
+      },
+    );
+
+    expect(gladCard.status).toBe(200);
+    expect(gladCard.body.cards?.[0]?.column).toBe("glad");
+
+    const invalidColumn = await apiJson<{ error?: string }>(
+      server.apiBase,
+      `/retrospectives/${retroId}/cards`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          participantId: facilitatorId,
+          column: "liked",
+          text: "Wrong template column",
+        }),
+      },
+    );
+
+    expect(invalidColumn.status).toBe(400);
+  });
+
+  it("preserves Mad Sad Glad template when a phase update omits template", async () => {
+    const retroId = crypto.randomUUID();
+    const facilitatorId = crypto.randomUUID();
+
+    await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          id: retroId,
+          name: "MSG Retro",
+          createdAt: Date.now(),
+          template: "madSadGlad",
+          phase: "assembly",
+          cards: [],
+          participants: [
+            {
+              id: facilitatorId,
+              fullName: "Facilitator",
+              isFacilitator: true,
+              joinedAt: Date.now(),
+            },
+          ],
+        }),
+      },
+    );
+
+    const start = await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          id: retroId,
+          name: "MSG Retro",
+          createdAt: Date.now(),
+          phase: "active",
+          cards: [],
+          participants: [
+            {
+              id: facilitatorId,
+              fullName: "Facilitator",
+              isFacilitator: true,
+              joinedAt: Date.now(),
+            },
+          ],
+        }),
+      },
+    );
+
+    expect(start.status).toBe(200);
+    expect(start.body.template).toBe("madSadGlad");
+
+    const addMad = await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}/cards`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          participantId: facilitatorId,
+          column: "mad",
+          text: "Too many meetings",
+        }),
+      },
+    );
+
+    expect(addMad.status).toBe(200);
+    expect(addMad.body.cards?.[0]?.column).toBe("mad");
   });
 });

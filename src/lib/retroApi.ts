@@ -1,5 +1,6 @@
-import type { FourLsColumn, Retrospective, VoteValue } from "./retroStore";
+import type { RetroColumnId, Retrospective, VoteValue } from "./retroStore";
 import { normalizeParticipant } from "./participants";
+import { normalizeTemplate } from "./templates";
 
 const API_BASE =
   import.meta.env.VITE_SYNC_API_URL?.replace(/\/$/, "") ?? "/api";
@@ -8,6 +9,9 @@ function normalizeRetroParticipants(retro: Retrospective): Retrospective {
   return {
     ...retro,
     participants: retro.participants.map(normalizeParticipant),
+    ...(retro.template !== undefined
+      ? { template: normalizeTemplate(retro.template) }
+      : {}),
   };
 }
 
@@ -30,12 +34,20 @@ export async function fetchRetro(
 }
 
 export async function saveRetro(retro: Retrospective): Promise<Retrospective | null> {
-  const { myVotes: _myVotes, cardVoteCounts: _cardVoteCounts, ...rest } = retro;
+  const {
+    myVotes: _myVotes,
+    cardVoteCounts: _cardVoteCounts,
+    template,
+    ...rest
+  } = retro;
   const payload = {
     ...rest,
     participants: retro.participants.map(
       ({ online: _online, lastSeen: _lastSeen, ...p }) => p,
     ),
+    ...(template !== undefined
+      ? { template: normalizeTemplate(template) }
+      : {}),
   };
   try {
     const res = await fetch(`${API_BASE}/retrospectives/${retro.id}`, {
@@ -71,7 +83,7 @@ export async function addRetroCard(
   retroId: string,
   payload: {
     participantId: string;
-    column: FourLsColumn;
+    column: RetroColumnId;
     text: string;
   },
 ): Promise<Retrospective | null> {

@@ -10,8 +10,8 @@ const PHASES = [
     number: 2,
     name: "Retrospective",
     tone: "active",
-    facilitator: ["Add 4L items", "Start voting"],
-    participant: ["Add 4L items to board"],
+    facilitator: ["Add items", "Start voting"],
+    participant: ["Add items to board"],
   },
   {
     number: 3,

@@ -1,27 +1,33 @@
-import { FOUR_LS_COLUMNS } from "../lib/fourLs";
+import {
+  getTemplateBoardTitle,
+  getTemplateColumns,
+  normalizeTemplate,
+  type RetroColumnId,
+} from "../lib/templates";
 import {
   addCard,
   castVote,
-  type FourLsColumn,
   type Retrospective,
   type RetroPhase,
   type VoteValue,
 } from "../lib/retroStore";
-import { FourLsColumn as FourLsColumnView } from "./FourLsColumn";
+import { RetroColumn } from "./RetroColumn";
 
-interface FourLsBoardProps {
+interface RetroBoardProps {
   retro: Retrospective;
   retroId: string;
   phase: RetroPhase;
   currentParticipantId: string | null;
 }
 
-export function FourLsBoard({
+export function RetroBoard({
   retro,
   retroId,
   phase,
   currentParticipantId,
-}: FourLsBoardProps) {
+}: RetroBoardProps) {
+  const template = normalizeTemplate(retro.template);
+  const columns = getTemplateColumns(template);
   const cards = retro.cards ?? [];
   const isActive = phase === "active";
   const isVoting = phase === "voting";
@@ -35,7 +41,7 @@ export function FourLsBoard({
     retro.participants.map((p) => [p.id, p]),
   );
 
-  async function handleAdd(column: FourLsColumn, text: string) {
+  async function handleAdd(column: RetroColumnId, text: string) {
     if (!currentParticipantId) {
       throw new Error("Join the retrospective to add items.");
     }
@@ -78,15 +84,23 @@ export function FourLsBoard({
       "Voting is closed. Items are sorted by net votes (up minus down) in each column.";
   }
 
+  const columnCountClass =
+    columns.length === 3 ? "four-ls-board__columns--three" : "";
+
   return (
-    <section className="four-ls-board" aria-label="4Ls retrospective board">
+    <section
+      className="four-ls-board"
+      aria-label={`${getTemplateBoardTitle(template)} board`}
+    >
       <header className="four-ls-board__header">
-        <h2 className="four-ls-board__title">4Ls Retrospective</h2>
+        <h2 className="four-ls-board__title">
+          {getTemplateBoardTitle(template)}
+        </h2>
         <p className="four-ls-board__subtitle">{subtitle}</p>
       </header>
-      <div className="four-ls-board__columns">
-        {FOUR_LS_COLUMNS.map((column) => (
-          <FourLsColumnView
+      <div className={`four-ls-board__columns ${columnCountClass}`.trim()}>
+        {columns.map((column) => (
+          <RetroColumn
             key={column.id}
             column={column}
             cards={cards.filter((c) => c.column === column.id)}

@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
-import type { FourLsColumnDef } from "../lib/fourLs";
+import type { RetroColumnDef } from "../lib/templates";
 import type {
   Participant,
   RetroCard,
@@ -11,8 +11,8 @@ import { Button } from "./Button";
 import { CardVoteButtons } from "./CardVoteButtons";
 import { CardVoteCounts } from "./CardVoteCounts";
 
-interface FourLsColumnProps {
-  column: FourLsColumnDef;
+interface RetroColumnProps {
+  column: RetroColumnDef;
   cards: RetroCard[];
   participantsById: Map<string, Participant>;
   canAdd: boolean;
@@ -25,7 +25,7 @@ interface FourLsColumnProps {
   onVote: (cardId: string, value: VoteValue) => Promise<void>;
 }
 
-export function FourLsColumn({
+export function RetroColumn({
   column,
   cards,
   participantsById,
@@ -37,7 +37,7 @@ export function FourLsColumn({
   cardVoteCounts,
   onAdd,
   onVote,
-}: FourLsColumnProps) {
+}: RetroColumnProps) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [votingCardId, setVotingCardId] = useState<string | null>(null);

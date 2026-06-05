@@ -7,11 +7,13 @@ import {
   saveFacilitatorSession,
   saveParticipantSession,
 } from "../lib/retroStore";
+import { RETRO_TEMPLATES, type RetroTemplate } from "../lib/templates";
 
 export function InitiatePage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [retroName, setRetroName] = useState("");
+  const [template, setTemplate] = useState<RetroTemplate>("fourLs");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +26,7 @@ export function InitiatePage() {
     setSubmitting(true);
     setError(null);
     try {
-      const { retro, participantId } = await createRetro(title, name);
+      const { retro, participantId } = await createRetro(title, name, template);
       saveParticipantSession(retro.id, participantId);
       saveFacilitatorSession(retro.id, participantId);
       navigate(`/retro/${retro.id}`);
@@ -67,6 +69,20 @@ export function InitiatePage() {
               placeholder="Sprint 42 Retro"
               required
             />
+          </label>
+          <label className="form__field">
+            <span className="form__label">Retrospective template</span>
+            <select
+              className="form__input form__select"
+              value={template}
+              onChange={(e) => setTemplate(e.target.value as RetroTemplate)}
+            >
+              {RETRO_TEMPLATES.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label} — {option.description}
+                </option>
+              ))}
+            </select>
           </label>
           {error && <p className="error-text">{error}</p>}
           <Button type="submit" disabled={!canSubmit}>

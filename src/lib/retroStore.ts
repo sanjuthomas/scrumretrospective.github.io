@@ -2,6 +2,12 @@ import { addRetroCard, castRetroVote, deleteRetro, fetchRetro, saveRetro } from 
 import { normalizeParticipant } from "./participants";
 import type { CardVoteCounts } from "./votes";
 
+import {
+  normalizeTemplate,
+  type RetroColumnId,
+  type RetroTemplate,
+} from "./templates";
+
 export interface Participant {
   id: string;
   fullName: string;
@@ -17,6 +23,9 @@ function normalizeRetro(retro: Retrospective): Retrospective {
   return {
     ...retro,
     participants: retro.participants.map(normalizeParticipant),
+    ...(retro.template !== undefined
+      ? { template: normalizeTemplate(retro.template) }
+      : {}),
   };
 }
 
@@ -24,11 +33,14 @@ export type RetroPhase = "assembly" | "active" | "voting" | "results";
 
 export type VoteValue = "up" | "down";
 
-export type FourLsColumn = "liked" | "learned" | "lacked" | "longedFor";
+export type { RetroColumnId, RetroTemplate } from "./templates";
+
+/** @deprecated Use RetroColumnId from ./templates */
+export type FourLsColumn = RetroColumnId;
 
 export interface RetroCard {
   id: string;
-  column: FourLsColumn;
+  column: RetroColumnId;
   text: string;
   authorId: string;
   createdAt: number;
@@ -38,6 +50,7 @@ export interface Retrospective {
   id: string;
   name: string;
   createdAt: number;
+  template?: RetroTemplate;
   participants: Participant[];
   phase?: RetroPhase;
   cards?: RetroCard[];
@@ -84,6 +97,7 @@ export async function loadRetro(id: string): Promise<Retrospective | null> {
 export async function createRetro(
   retroName: string,
   facilitatorFullName: string,
+  template: RetroTemplate = "fourLs",
 ): Promise<{ retro: Retrospective; participantId: string }> {
   const id = crypto.randomUUID();
   const participantId = crypto.randomUUID();
@@ -91,6 +105,7 @@ export async function createRetro(
     id,
     name: retroName.trim(),
     createdAt: Date.now(),
+    template,
     phase: "assembly",
     cards: [],
     participants: [
@@ -277,7 +292,7 @@ export async function endRetro(retroId: string): Promise<void> {
 export async function addCard(
   retroId: string,
   participantId: string,
-  column: FourLsColumn,
+  column: RetroColumnId,
   text: string,
 ): Promise<Retrospective | null> {
   const trimmed = text.trim();
@@ -347,6 +362,9 @@ function retroChanged(
   if (!prev || !next) return prev !== next;
   if (prev.id !== next.id || prev.name !== next.name) return true;
   if ((prev.phase ?? "assembly") !== (next.phase ?? "assembly")) return true;
+  if (normalizeTemplate(prev.template) !== normalizeTemplate(next.template)) {
+    return true;
+  }
   if (prev.participants.length !== next.participants.length) return true;
   if (participantRoleKey(prev) !== participantRoleKey(next)) return true;
   if (participantPresenceKey(prev) !== participantPresenceKey(next)) {

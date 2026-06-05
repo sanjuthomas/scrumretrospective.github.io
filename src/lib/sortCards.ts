@@ -1,10 +1,10 @@
-import type { FourLsColumn, RetroCard } from "./retroStore";
+import type { RetroColumnId, RetroCard } from "./retroStore";
 import type { CardVoteCounts } from "./votes";
 import { effectiveVote } from "./votes";
 
 export function sortCardsForResults(
   cards: RetroCard[],
-  column: FourLsColumn,
+  column: RetroColumnId,
   cardVoteCounts: Partial<Record<string, CardVoteCounts>>,
 ): RetroCard[] {
   return cards

@@ -8,12 +8,16 @@ Facilitators create a session, invite the team via a join link, and guide the re
 
 **4Ls columns:** Liked · Learned · Lacked · Longed For
 
+**Mad, Sad, Glad columns:** Mad · Sad · Glad
+
+Facilitators choose a template when creating a retrospective.
+
 ## Phases
 
 | Phase | Name | What happens |
 |-------|------|----------------|
 | 1 | Team assembly | Facilitator creates the retro and shares the join link. Participants join with their name. |
-| 2 | Retrospective | Facilitator starts the board. Everyone adds items to any 4L column. |
+| 2 | Retrospective | Facilitator starts the board. Everyone adds items to any column. |
 | 3 | Voting | Facilitator opens voting. Participants vote up/down on **other people's** items. Vote totals stay hidden. |
 | 4 | Results | Facilitator closes voting. Items show up/down counts, sorted by net vote in each column. Facilitator can export PDF and end the session. |
 
@@ -29,7 +33,7 @@ Facilitators create a session, invite the team via a join link, and guide the re
 - **Live sync** — sync API + 1s polling keeps participants, items, and votes in sync across browsers
 - **Presence** — online indicators in the participant sidebar
 - **Private voting** — only your own votes are visible during Phase 3; totals appear after close
-- **PDF export** — retro name, start/end time, duration, and all items with net votes (4Ls stacked vertically, sorted by net vote)
+- **PDF export** — retro name, start/end time, duration, and all items with net votes (columns stacked vertically, sorted by net vote)
 - **Ephemeral storage** — in-memory on the sync server; deleted when the facilitator ends the retro
 
 ## Development
@@ -106,6 +110,8 @@ npm run dev
 ```
 
 No `VITE_SYNC_API_URL` needed locally — Vite proxies `/api` to `http://localhost:8787`.
+
+Restart the sync API after changing `server/` (a stale local process can still validate only 4Ls columns).
 
 For a production-like local build:
 

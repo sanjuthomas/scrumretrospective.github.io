@@ -12,16 +12,27 @@ const ALLOWED_ORIGINS = (
   .map((s) => s.trim())
   .filter(Boolean);
 
-const VALID_FOUR_LS_COLUMNS = new Set([
-  "liked",
-  "learned",
-  "lacked",
-  "longedFor",
-]);
+const TEMPLATE_COLUMNS = {
+  fourLs: new Set(["liked", "learned", "lacked", "longedFor"]),
+  madSadGlad: new Set(["mad", "sad", "glad"]),
+};
 
 const VALID_VOTE_VALUES = new Set(["up", "down"]);
 
 const rooms = new Map();
+
+function roomTemplate(room) {
+  return room?.template ?? "fourLs";
+}
+
+function normalizeRoomTemplate(room, fallbackTemplate) {
+  return room?.template ?? fallbackTemplate ?? "fourLs";
+}
+
+function isValidColumnForRoom(room, column) {
+  const allowed = TEMPLATE_COLUMNS[roomTemplate(room)];
+  return allowed?.has(column) ?? false;
+}
 
 function corsHeaders(origin) {
   const headers = {
@@ -239,14 +250,14 @@ const server = createServer(async (req, res) => {
         );
         return;
       }
-      if (!VALID_FOUR_LS_COLUMNS.has(column)) {
-        send(res, 400, { error: "Invalid column" }, origin);
-        return;
-      }
 
       const room = rooms.get(roomId);
       if (!room) {
         send(res, 404, { error: "Not found" }, origin);
+        return;
+      }
+      if (!isValidColumnForRoom(room, column)) {
+        send(res, 400, { error: "Invalid column" }, origin);
         return;
       }
       if ((room.phase ?? "assembly") !== "active") {
@@ -412,6 +423,7 @@ const server = createServer(async (req, res) => {
           stripped.cards = existing.cards ?? [];
         }
         stripped.votes = existing.votes ?? [];
+        stripped.template = normalizeRoomTemplate(stripped, existing.template);
 
         const existingPhase = existing.phase ?? "assembly";
         const nextPhase = stripped.phase ?? existingPhase;
@@ -447,6 +459,7 @@ const server = createServer(async (req, res) => {
         stripped.phase = nextPhase;
       } else {
         stripped.votes = [];
+        stripped.template = normalizeRoomTemplate(stripped, "fourLs");
       }
       if (!stripped.cards) {
         stripped.cards = [];

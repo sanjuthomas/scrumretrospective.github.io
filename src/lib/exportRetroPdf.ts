@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { FOUR_LS_COLUMNS } from "./fourLs";
+import { getTemplateColumns, normalizeTemplate } from "./templates";
 import { formatDuration, formatRetroCreatedAt } from "./formatDate";
 import { sortCardsForResults } from "./sortCards";
 import type { Retrospective } from "./retroStore";
@@ -77,8 +77,9 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
   y += 6;
 
   const cards = retro.cards ?? [];
+  const columns = getTemplateColumns(normalizeTemplate(retro.template));
 
-  for (const column of FOUR_LS_COLUMNS) {
+  for (const column of columns) {
     y = ensureSpace(doc, y, LINE_HEIGHT * 3);
     doc.setFont("helvetica", "bold");
     y = writeLines(doc, column.title, PAGE_MARGIN, y, contentWidth, 14);

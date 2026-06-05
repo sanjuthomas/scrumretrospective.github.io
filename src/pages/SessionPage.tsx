@@ -4,12 +4,13 @@ import { Button } from "../components/Button";
 import { CopyLinkButton } from "../components/CopyLinkButton";
 import { PageCard } from "../components/PageCard";
 import { ParticipantPane } from "../components/ParticipantPane";
-import { FourLsBoard } from "../components/FourLsBoard";
+import { RetroBoard } from "../components/RetroBoard";
 import { usePresence } from "../hooks/usePresence";
 import { useRetro } from "../hooks/useRetro";
 import { downloadRetroPdf } from "../lib/exportRetroPdf";
 import { formatRetroCreatedAt } from "../lib/formatDate";
 import { getPhaseLabel, isResultsPhase } from "../lib/phases";
+import { getTemplateLabel } from "../lib/templates";
 import {
   endRetro,
   getJoinUrl,
@@ -176,6 +177,10 @@ export function SessionPage() {
                 <dd>{facilitator?.fullName ?? "—"}</dd>
               </div>
               <div className="session-details__row">
+                <dt>Template</dt>
+                <dd>{getTemplateLabel(retro.template)}</dd>
+              </div>
+              <div className="session-details__row">
                 <dt>Created</dt>
                 <dd>{formatRetroCreatedAt(retro.createdAt)}</dd>
               </div>
@@ -295,7 +300,7 @@ export function SessionPage() {
         )}
 
         {!isAssembly && (
-          <FourLsBoard
+          <RetroBoard
             retro={retro}
             retroId={retroId}
             phase={phase}
