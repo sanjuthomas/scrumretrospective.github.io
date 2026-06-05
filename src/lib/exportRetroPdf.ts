@@ -42,14 +42,6 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - PAGE_MARGIN * 2;
   const cardVoteCounts = retro.cardVoteCounts ?? {};
-  const participantsById = new Map(
-    retro.participants.map((p) => [p.id, p.fullName]),
-  );
-  const facilitator = retro.participants.find((p) => p.isFacilitator);
-  const sortedParticipants = [...retro.participants].sort((a, b) => {
-    if (a.isFacilitator !== b.isFacilitator) return a.isFacilitator ? -1 : 1;
-    return a.joinedAt - b.joinedAt;
-  });
 
   let y = PAGE_MARGIN;
 
@@ -58,14 +50,6 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
   y += 4;
 
   doc.setFont("helvetica", "normal");
-  y = writeLines(
-    doc,
-    `Facilitator: ${facilitator?.fullName ?? "Unknown"}`,
-    PAGE_MARGIN,
-    y,
-    contentWidth,
-    11,
-  );
   y = writeLines(
     doc,
     `Started: ${formatRetroCreatedAt(retro.createdAt)}`,
@@ -90,16 +74,6 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
     contentWidth,
     11,
   );
-  y += 2;
-
-  y = writeLines(doc, "Participants", PAGE_MARGIN, y, contentWidth, 12);
-  doc.setFont("helvetica", "normal");
-  for (const participant of sortedParticipants) {
-    const label = participant.isFacilitator
-      ? `${participant.fullName} (Facilitator)`
-      : participant.fullName;
-    y = writeLines(doc, `• ${label}`, PAGE_MARGIN + 4, y, contentWidth - 4, 10);
-  }
   y += 6;
 
   const cards = retro.cards ?? [];
@@ -130,7 +104,6 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
 
     for (const card of columnCards) {
       const counts = cardVoteCounts[card.id];
-      const author = participantsById.get(card.authorId) ?? "Unknown";
       const net = effectiveVote(counts);
 
       y = ensureSpace(doc, y, LINE_HEIGHT * 4);
@@ -144,7 +117,7 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
       );
       y = writeLines(
         doc,
-        `— ${author}  |  Net vote: ${net >= 0 ? "+" : ""}${net}`,
+        `Net vote: ${net >= 0 ? "+" : ""}${net}`,
         PAGE_MARGIN + 4,
         y,
         contentWidth - 4,

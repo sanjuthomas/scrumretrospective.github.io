@@ -29,7 +29,7 @@ Facilitators create a session, invite the team via a join link, and guide the re
 - **Live sync** — sync API + 1s polling keeps participants, items, and votes in sync across browsers
 - **Presence** — online indicators in the participant sidebar
 - **Private voting** — only your own votes are visible during Phase 3; totals appear after close
-- **PDF export** — retro name, facilitator, start/end time, duration, participants, and all items (4Ls stacked vertically, sorted by net vote)
+- **PDF export** — retro name, start/end time, duration, and all items with net votes (4Ls stacked vertically, sorted by net vote)
 - **Ephemeral storage** — in-memory on the sync server; deleted when the facilitator ends the retro
 
 ## Development
