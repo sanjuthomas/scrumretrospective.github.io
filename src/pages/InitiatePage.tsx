@@ -13,7 +13,7 @@ export function InitiatePage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [retroName, setRetroName] = useState("");
-  const [template, setTemplate] = useState<RetroTemplate>("fourLs");
+  const [template, setTemplate] = useState<RetroTemplate | "">("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +21,7 @@ export function InitiatePage() {
     event.preventDefault();
     const name = fullName.trim();
     const title = retroName.trim();
-    if (!name || !title || submitting) return;
+    if (!name || !title || !template || submitting) return;
 
     setSubmitting(true);
     setError(null);
@@ -41,7 +41,10 @@ export function InitiatePage() {
   }
 
   const canSubmit =
-    fullName.trim().length > 0 && retroName.trim().length > 0 && !submitting;
+    fullName.trim().length > 0 &&
+    retroName.trim().length > 0 &&
+    template !== "" &&
+    !submitting;
 
   return (
     <main className="center-page">
@@ -75,8 +78,14 @@ export function InitiatePage() {
             <select
               className="form__input form__select"
               value={template}
-              onChange={(e) => setTemplate(e.target.value as RetroTemplate)}
+              onChange={(e) =>
+                setTemplate(e.target.value as RetroTemplate | "")
+              }
+              required
             >
+              <option value="" disabled>
+                Select a template…
+              </option>
               {RETRO_TEMPLATES.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label} — {option.description}
