@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import { getTemplateColumns, normalizeTemplate } from "./templates";
 import { formatDuration, formatRetroCreatedAt } from "./formatDate";
 import { sortCardsForResults } from "./sortCards";
+import { normalizeParticipant } from "./participants";
 import type { Retrospective } from "./retroStore";
 import { effectiveVote } from "./votes";
 
@@ -37,6 +38,24 @@ function writeLines(
   return y;
 }
 
+function formatParticipantNames(retro: Retrospective): {
+  facilitator: string;
+  participants: string;
+} {
+  const normalized = retro.participants.map(normalizeParticipant);
+  const facilitator = normalized.find((participant) => participant.isFacilitator);
+  const participantNames = normalized
+    .filter((participant) => !participant.isFacilitator)
+    .map((participant) => participant.fullName.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+  return {
+    facilitator: facilitator?.fullName.trim() || "—",
+    participants: participantNames.length > 0 ? participantNames.join(", ") : "—",
+  };
+}
+
 export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): void {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -46,7 +65,7 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
   let y = PAGE_MARGIN;
 
   doc.setFont("helvetica", "bold");
-  y = writeLines(doc, retro.name, PAGE_MARGIN, y, contentWidth, 18);
+  y = writeLines(doc, `Retrospective - ${retro.name}`, PAGE_MARGIN, y, contentWidth, 18);
   y += 4;
 
   doc.setFont("helvetica", "normal");
@@ -74,6 +93,20 @@ export function downloadRetroPdf(retro: Retrospective, endedAt = Date.now()): vo
     contentWidth,
     11,
   );
+  y += 4;
+
+  const { facilitator, participants } = formatParticipantNames(retro);
+
+  doc.setFont("helvetica", "bold");
+  y = writeLines(doc, "Facilitator", PAGE_MARGIN, y, contentWidth, 12);
+  doc.setFont("helvetica", "normal");
+  y = writeLines(doc, facilitator, PAGE_MARGIN, y, contentWidth, 11);
+  y += 2;
+
+  doc.setFont("helvetica", "bold");
+  y = writeLines(doc, "Participants", PAGE_MARGIN, y, contentWidth, 12);
+  doc.setFont("helvetica", "normal");
+  y = writeLines(doc, participants, PAGE_MARGIN, y, contentWidth, 11);
   y += 6;
 
   const cards = retro.cards ?? [];

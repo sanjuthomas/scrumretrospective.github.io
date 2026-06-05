@@ -36,7 +36,7 @@ Preflight: `OPTIONS` any path → `204 No Content` with CORS headers.
 | `id` | `string` | UUID; must match URL on `PUT` |
 | `name` | `string` | Display name |
 | `createdAt` | `number` | Unix ms timestamp |
-| `template` | `"fourLs"` \| `"madSadGlad"` | Defaults to `"fourLs"` on create; preserved on update if omitted |
+| `template` | `"fourLs"` \| `"fourWs"` \| `"madSadGlad"` | Defaults to `"fourLs"` on create; preserved on update if omitted |
 | `phase` | `"assembly"` \| `"active"` \| `"voting"` \| `"results"` | Defaults to `"assembly"` |
 | `participants` | `Participant[]` | Required on `PUT` |
 | `cards` | `RetroCard[]` | Board items; optional on `PUT` (server merges with existing) |
@@ -97,6 +97,7 @@ assembly → active → voting → results
 | `template` | Valid `column` values |
 |------------|----------------------|
 | `fourLs` | `liked`, `learned`, `lacked`, `longedFor` |
+| `fourWs` | `wentWell`, `didNotGoWell`, `learned`, `shouldChange` |
 | `madSadGlad` | `mad`, `sad`, `glad` |
 
 Wrong column for the room template → `400 Invalid column`.

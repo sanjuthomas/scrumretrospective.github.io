@@ -14,6 +14,7 @@ const ALLOWED_ORIGINS = (
 
 const TEMPLATE_COLUMNS = {
   fourLs: new Set(["liked", "learned", "lacked", "longedFor"]),
+  fourWs: new Set(["wentWell", "didNotGoWell", "learned", "shouldChange"]),
   madSadGlad: new Set(["mad", "sad", "glad"]),
 };
 

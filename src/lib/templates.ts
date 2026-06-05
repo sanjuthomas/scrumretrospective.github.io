@@ -1,8 +1,16 @@
-export type RetroTemplate = "fourLs" | "madSadGlad";
+export type RetroTemplate = "fourLs" | "madSadGlad" | "fourWs";
 
 export type FourLsColumnId = "liked" | "learned" | "lacked" | "longedFor";
 export type MadSadGladColumnId = "mad" | "sad" | "glad";
-export type RetroColumnId = FourLsColumnId | MadSadGladColumnId;
+export type FourWsColumnId =
+  | "wentWell"
+  | "didNotGoWell"
+  | "learned"
+  | "shouldChange";
+export type RetroColumnId =
+  | FourLsColumnId
+  | MadSadGladColumnId
+  | FourWsColumnId;
 
 export interface RetroColumnDef {
   id: RetroColumnId;
@@ -47,6 +55,35 @@ export const FOUR_LS_TEMPLATE: RetroTemplateDef = {
   ],
 };
 
+export const FOUR_WS_TEMPLATE: RetroTemplateDef = {
+  id: "fourWs",
+  label: "4 W's",
+  description: "Went well, didn't go well, learned, should change",
+  boardTitle: "4 W's Retrospective",
+  columns: [
+    {
+      id: "wentWell",
+      title: "Went Well",
+      prompt: "What went well?",
+    },
+    {
+      id: "didNotGoWell",
+      title: "Did Not Go Well",
+      prompt: "What did not go well?",
+    },
+    {
+      id: "learned",
+      title: "Learned",
+      prompt: "What did we learn?",
+    },
+    {
+      id: "shouldChange",
+      title: "Should Change",
+      prompt: "What should we change before the next cycle?",
+    },
+  ],
+};
+
 export const MAD_SAD_GLAD_TEMPLATE: RetroTemplateDef = {
   id: "madSadGlad",
   label: "Mad, Sad, Glad",
@@ -73,6 +110,7 @@ export const MAD_SAD_GLAD_TEMPLATE: RetroTemplateDef = {
 
 export const RETRO_TEMPLATES: RetroTemplateDef[] = [
   FOUR_LS_TEMPLATE,
+  FOUR_WS_TEMPLATE,
   MAD_SAD_GLAD_TEMPLATE,
 ];
 

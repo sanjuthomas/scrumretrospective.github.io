@@ -8,6 +8,8 @@ Facilitators create a session, invite the team via a join link, and guide the re
 
 **4Ls columns:** Liked · Learned · Lacked · Longed For
 
+**4 W's columns:** Went Well · Did Not Go Well · Learned · Should Change
+
 **Mad, Sad, Glad columns:** Mad · Sad · Glad
 
 Facilitators choose a template when creating a retrospective.
@@ -33,7 +35,7 @@ Facilitators choose a template when creating a retrospective.
 - **Live sync** — sync API + 1s polling keeps participants, items, and votes in sync across browsers
 - **Presence** — online indicators in the participant sidebar
 - **Private voting** — only your own votes are visible during Phase 3; totals appear after close
-- **PDF export** — retro name, start/end time, duration, and all items with net votes (columns stacked vertically, sorted by net vote)
+- **PDF export** — retro name, start/end time, duration, facilitator and participant names, and all items with net votes (columns stacked vertically, sorted by net vote)
 - **Ephemeral storage** — in-memory on the sync server; deleted when the facilitator ends the retro
 
 ## Development

@@ -20,7 +20,7 @@ describe("downloadRetroPdf", () => {
     save.mockClear();
   });
 
-  it("exports anonymized results without participant names", async () => {
+  it("includes facilitator and participant names in the report", async () => {
     const { downloadRetroPdf } = await import("./exportRetroPdf");
 
     const retro: Retrospective = {
@@ -34,6 +34,18 @@ describe("downloadRetroPdf", () => {
           fullName: "Jane Facilitator",
           isFacilitator: true,
           joinedAt: 1,
+        },
+        {
+          id: "part-1",
+          fullName: "Bob Participant",
+          isFacilitator: false,
+          joinedAt: 2,
+        },
+        {
+          id: "part-2",
+          fullName: "Alice Participant",
+          isFacilitator: false,
+          joinedAt: 3,
         },
       ],
       cards: [
@@ -61,10 +73,12 @@ describe("downloadRetroPdf", () => {
       .mock.calls.map((call: unknown[]) => String(call[0]))
       .join("\n");
 
-    expect(writtenText).toContain("Sprint 42 Retro");
+    expect(writtenText).toContain("Retrospective - Sprint 42 Retro");
+    expect(writtenText).toContain("Facilitator");
+    expect(writtenText).toContain("Jane Facilitator");
+    expect(writtenText).toContain("Participants");
+    expect(writtenText).toContain("Alice Participant, Bob Participant");
     expect(writtenText).toContain("Great collaboration");
     expect(writtenText).toContain("Net vote: +2");
-    expect(writtenText).not.toContain("Jane Facilitator");
-    expect(writtenText).not.toContain("Participants");
   });
 });

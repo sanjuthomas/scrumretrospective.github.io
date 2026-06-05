@@ -21,6 +21,15 @@ describe("templates", () => {
     ]);
   });
 
+  it("returns 4 W's columns", () => {
+    expect(getTemplateColumns("fourWs").map((column) => column.id)).toEqual([
+      "wentWell",
+      "didNotGoWell",
+      "learned",
+      "shouldChange",
+    ]);
+  });
+
   it("returns Mad, Sad, Glad columns", () => {
     expect(getTemplateColumns("madSadGlad").map((column) => column.id)).toEqual([
       "mad",
@@ -32,6 +41,8 @@ describe("templates", () => {
   it("validates columns per template", () => {
     expect(isValidColumnForTemplate("fourLs", "liked")).toBe(true);
     expect(isValidColumnForTemplate("fourLs", "mad")).toBe(false);
+    expect(isValidColumnForTemplate("fourWs", "wentWell")).toBe(true);
+    expect(isValidColumnForTemplate("fourWs", "liked")).toBe(false);
     expect(isValidColumnForTemplate("madSadGlad", "glad")).toBe(true);
     expect(isValidColumnForTemplate("madSadGlad", "liked")).toBe(false);
   });
