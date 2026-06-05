@@ -1,4 +1,10 @@
-export type RetroTemplate = "fourLs" | "madSadGlad" | "fourWs";
+export type RetroTemplate =
+  | "fourLs"
+  | "madSadGlad"
+  | "fourWs"
+  | "startStopContinue"
+  | "keepDropTry"
+  | "daki";
 
 export type FourLsColumnId = "liked" | "learned" | "lacked" | "longedFor";
 export type MadSadGladColumnId = "mad" | "sad" | "glad";
@@ -7,10 +13,16 @@ export type FourWsColumnId =
   | "didNotGoWell"
   | "learned"
   | "shouldChange";
+export type StartStopContinueColumnId = "start" | "stop" | "continue";
+export type KeepDropTryColumnId = "keep" | "drop" | "try";
+export type DakiColumnId = "drop" | "add" | "keep" | "improve";
 export type RetroColumnId =
   | FourLsColumnId
   | MadSadGladColumnId
-  | FourWsColumnId;
+  | FourWsColumnId
+  | StartStopContinueColumnId
+  | KeepDropTryColumnId
+  | DakiColumnId;
 
 export interface RetroColumnDef {
   id: RetroColumnId;
@@ -28,9 +40,9 @@ export interface RetroTemplateDef {
 
 export const FOUR_LS_TEMPLATE: RetroTemplateDef = {
   id: "fourLs",
-  label: "4Ls",
+  label: "4 Ls",
   description: "Liked, Learned, Lacked, Longed For",
-  boardTitle: "4Ls Retrospective",
+  boardTitle: "4 Ls Retrospective",
   columns: [
     {
       id: "liked",
@@ -57,9 +69,9 @@ export const FOUR_LS_TEMPLATE: RetroTemplateDef = {
 
 export const FOUR_WS_TEMPLATE: RetroTemplateDef = {
   id: "fourWs",
-  label: "4 W's",
+  label: "4 Ws",
   description: "Went well, didn't go well, learned, should change",
-  boardTitle: "4 W's Retrospective",
+  boardTitle: "4 Ws Retrospective",
   columns: [
     {
       id: "wentWell",
@@ -80,6 +92,83 @@ export const FOUR_WS_TEMPLATE: RetroTemplateDef = {
       id: "shouldChange",
       title: "Should Change",
       prompt: "What should we change before the next cycle?",
+    },
+  ],
+};
+
+export const START_STOP_CONTINUE_TEMPLATE: RetroTemplateDef = {
+  id: "startStopContinue",
+  label: "Start, Stop, Continue",
+  description: "New habits, habits to drop, and what to keep",
+  boardTitle: "Start, Stop, Continue Retrospective",
+  columns: [
+    {
+      id: "start",
+      title: "Start",
+      prompt: "What should we start doing?",
+    },
+    {
+      id: "stop",
+      title: "Stop",
+      prompt: "What should we stop doing?",
+    },
+    {
+      id: "continue",
+      title: "Continue",
+      prompt: "What should we keep doing?",
+    },
+  ],
+};
+
+export const KEEP_DROP_TRY_TEMPLATE: RetroTemplateDef = {
+  id: "keepDropTry",
+  label: "Keep, Drop, Try",
+  description: "Keep what works, drop what doesn't, try something new",
+  boardTitle: "Keep, Drop, Try Retrospective",
+  columns: [
+    {
+      id: "keep",
+      title: "Keep",
+      prompt: "What should we keep doing?",
+    },
+    {
+      id: "drop",
+      title: "Drop",
+      prompt: "What should we drop?",
+    },
+    {
+      id: "try",
+      title: "Try",
+      prompt: "What should we try?",
+    },
+  ],
+};
+
+export const DAKI_TEMPLATE: RetroTemplateDef = {
+  id: "daki",
+  label: "DAKI",
+  description: "Drop, Add, Keep, Improve",
+  boardTitle: "DAKI Retrospective",
+  columns: [
+    {
+      id: "drop",
+      title: "Drop",
+      prompt: "What should we drop?",
+    },
+    {
+      id: "add",
+      title: "Add",
+      prompt: "What should we add?",
+    },
+    {
+      id: "keep",
+      title: "Keep",
+      prompt: "What should we keep?",
+    },
+    {
+      id: "improve",
+      title: "Improve",
+      prompt: "What should we improve?",
     },
   ],
 };
@@ -111,6 +200,9 @@ export const MAD_SAD_GLAD_TEMPLATE: RetroTemplateDef = {
 export const RETRO_TEMPLATES: RetroTemplateDef[] = [
   FOUR_LS_TEMPLATE,
   FOUR_WS_TEMPLATE,
+  START_STOP_CONTINUE_TEMPLATE,
+  KEEP_DROP_TRY_TEMPLATE,
+  DAKI_TEMPLATE,
   MAD_SAD_GLAD_TEMPLATE,
 ];
 

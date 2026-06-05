@@ -1,14 +1,20 @@
 # Scrum Retrospective
 
-Static web app for [scrumretrospective.org](https://scrumretrospective.org) — run lightweight **4Ls scrum retrospectives** in the browser with no accounts.
+Static web app for [scrumretrospective.org](https://scrumretrospective.org) — run lightweight **4 Ls scrum retrospectives** in the browser with no accounts.
 
 ## Overview
 
 Facilitators create a session, invite the team via a join link, and guide the retro through four phases: team assembly, item collection, voting, and results. When the facilitator ends the session, results export as a PDF and the room is removed from the sync server.
 
-**4Ls columns:** Liked · Learned · Lacked · Longed For
+**4 Ls columns:** Liked · Learned · Lacked · Longed For
 
-**4 W's columns:** Went Well · Did Not Go Well · Learned · Should Change
+**4 Ws columns:** Went Well · Did Not Go Well · Learned · Should Change
+
+**Start, Stop, Continue columns:** Start · Stop · Continue
+
+**Keep, Drop, Try columns:** Keep · Drop · Try
+
+**DAKI columns:** Drop · Add · Keep · Improve
 
 **Mad, Sad, Glad columns:** Mad · Sad · Glad
 
@@ -113,7 +119,7 @@ npm run dev
 
 No `VITE_SYNC_API_URL` needed locally — Vite proxies `/api` to `http://localhost:8787`.
 
-Restart the sync API after changing `server/` (a stale local process can still validate only 4Ls columns).
+Restart the sync API after changing `server/` (a stale local process can still validate only 4 Ls columns).
 
 For a production-like local build:
 

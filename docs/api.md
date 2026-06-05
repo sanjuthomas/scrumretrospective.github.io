@@ -36,7 +36,7 @@ Preflight: `OPTIONS` any path → `204 No Content` with CORS headers.
 | `id` | `string` | UUID; must match URL on `PUT` |
 | `name` | `string` | Display name |
 | `createdAt` | `number` | Unix ms timestamp |
-| `template` | `"fourLs"` \| `"fourWs"` \| `"madSadGlad"` | Defaults to `"fourLs"` on create; preserved on update if omitted |
+| `template` | `"fourLs"` \| `"fourWs"` \| `"startStopContinue"` \| `"keepDropTry"` \| `"daki"` \| `"madSadGlad"` | Defaults to `"fourLs"` on create; preserved on update if omitted |
 | `phase` | `"assembly"` \| `"active"` \| `"voting"` \| `"results"` | Defaults to `"assembly"` |
 | `participants` | `Participant[]` | Required on `PUT` |
 | `cards` | `RetroCard[]` | Board items; optional on `PUT` (server merges with existing) |
@@ -98,6 +98,9 @@ assembly → active → voting → results
 |------------|----------------------|
 | `fourLs` | `liked`, `learned`, `lacked`, `longedFor` |
 | `fourWs` | `wentWell`, `didNotGoWell`, `learned`, `shouldChange` |
+| `startStopContinue` | `start`, `stop`, `continue` |
+| `keepDropTry` | `keep`, `drop`, `try` |
+| `daki` | `drop`, `add`, `keep`, `improve` |
 | `madSadGlad` | `mad`, `sad`, `glad` |
 
 Wrong column for the room template → `400 Invalid column`.

@@ -15,6 +15,9 @@ const ALLOWED_ORIGINS = (
 const TEMPLATE_COLUMNS = {
   fourLs: new Set(["liked", "learned", "lacked", "longedFor"]),
   fourWs: new Set(["wentWell", "didNotGoWell", "learned", "shouldChange"]),
+  startStopContinue: new Set(["start", "stop", "continue"]),
+  keepDropTry: new Set(["keep", "drop", "try"]),
+  daki: new Set(["drop", "add", "keep", "improve"]),
   madSadGlad: new Set(["mad", "sad", "glad"]),
 };
 
