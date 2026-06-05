@@ -14,6 +14,7 @@ import {
   endRetro,
   getJoinUrl,
   getParticipantSession,
+  isCurrentFacilitator,
   startRetro,
   startVoting,
   closeVoting,
@@ -77,8 +78,10 @@ export function SessionPage() {
   }
 
   const joinUrl = getJoinUrl(retroId);
-  const isFacilitator = retro.participants.some(
-    (p) => p.id === currentParticipantId && p.isFacilitator,
+  const isFacilitator = isCurrentFacilitator(
+    retro,
+    retroId,
+    currentParticipantId,
   );
 
   const participants = retro.participants.map((p) => ({

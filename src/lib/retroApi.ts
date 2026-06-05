@@ -14,7 +14,16 @@ export async function fetchRetro(
     const res = await fetch(`${API_BASE}/retrospectives/${id}${query}`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    return (await res.json()) as Retrospective;
+    const retro = (await res.json()) as Retrospective;
+    return {
+      ...retro,
+      participants: retro.participants.map((p) => ({
+        ...p,
+        isFacilitator: Boolean(
+          p.isFacilitator ?? (p as { isInitiator?: boolean }).isInitiator,
+        ),
+      })),
+    };
   } catch {
     return null;
   }
@@ -35,7 +44,16 @@ export async function saveRetro(retro: Retrospective): Promise<Retrospective | n
       body: JSON.stringify(payload),
     });
     if (!res.ok) return null;
-    return (await res.json()) as Retrospective;
+    const saved = (await res.json()) as Retrospective;
+    return {
+      ...saved,
+      participants: saved.participants.map((p) => ({
+        ...p,
+        isFacilitator: Boolean(
+          p.isFacilitator ?? (p as { isInitiator?: boolean }).isInitiator,
+        ),
+      })),
+    };
   } catch {
     return null;
   }

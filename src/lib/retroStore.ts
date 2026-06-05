@@ -12,6 +12,22 @@ export interface Participant {
   lastSeen?: number;
 }
 
+type ParticipantPayload = Participant & { isInitiator?: boolean };
+
+function normalizeParticipant(participant: ParticipantPayload): Participant {
+  return {
+    ...participant,
+    isFacilitator: Boolean(participant.isFacilitator ?? participant.isInitiator),
+  };
+}
+
+function normalizeRetro(retro: Retrospective): Retrospective {
+  return {
+    ...retro,
+    participants: retro.participants.map(normalizeParticipant),
+  };
+}
+
 export type RetroPhase = "assembly" | "active" | "voting" | "results";
 
 export type VoteValue = "up" | "down";
@@ -40,11 +56,12 @@ export interface Retrospective {
 }
 
 const PARTICIPANT_SESSION_PREFIX = "scrum-retro-participant:";
+const FACILITATOR_SESSION_PREFIX = "scrum-retro-facilitator:";
 
 const memoryCache = new Map<string, Retrospective>();
 
 function cacheRetro(retro: Retrospective): void {
-  memoryCache.set(retro.id, retro);
+  memoryCache.set(retro.id, normalizeRetro(retro));
 }
 
 export function getCachedRetro(id: string): Retrospective | null {
@@ -99,6 +116,7 @@ export async function createRetro(
     throw new Error("Could not save retrospective. Is the sync server running?");
   }
   cacheRetro(saved);
+  saveFacilitatorSession(id, participantId);
   return { retro: saved, participantId };
 }
 
@@ -146,6 +164,36 @@ export function saveParticipantSession(
   sessionStorage.setItem(
     `${PARTICIPANT_SESSION_PREFIX}${retroId}`,
     participantId,
+  );
+}
+
+export function saveFacilitatorSession(
+  retroId: string,
+  participantId: string,
+): void {
+  sessionStorage.setItem(
+    `${FACILITATOR_SESSION_PREFIX}${retroId}`,
+    participantId,
+  );
+}
+
+export function getFacilitatorSession(retroId: string): string | null {
+  return sessionStorage.getItem(`${FACILITATOR_SESSION_PREFIX}${retroId}`);
+}
+
+export function isCurrentFacilitator(
+  retro: Retrospective,
+  retroId: string,
+  participantId: string | null,
+): boolean {
+  if (!participantId) return false;
+
+  if (getFacilitatorSession(retroId) === participantId) {
+    return true;
+  }
+
+  return retro.participants.some(
+    (p) => p.id === participantId && p.isFacilitator,
   );
 }
 
@@ -293,6 +341,12 @@ function cardVoteCountsKey(retro: Retrospective): string {
   return JSON.stringify(retro.cardVoteCounts ?? {});
 }
 
+function participantRoleKey(retro: Retrospective): string {
+  return retro.participants
+    .map((p) => `${p.id}:${p.isFacilitator ? 1 : 0}`)
+    .join("|");
+}
+
 function retroChanged(
   prev: Retrospective | null,
   next: Retrospective | null,
@@ -302,6 +356,7 @@ function retroChanged(
   if (prev.id !== next.id || prev.name !== next.name) return true;
   if ((prev.phase ?? "assembly") !== (next.phase ?? "assembly")) return true;
   if (prev.participants.length !== next.participants.length) return true;
+  if (participantRoleKey(prev) !== participantRoleKey(next)) return true;
   if (participantPresenceKey(prev) !== participantPresenceKey(next)) {
     return true;
   }

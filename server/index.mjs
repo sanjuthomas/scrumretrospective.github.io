@@ -62,9 +62,20 @@ function readBody(req) {
 function stripEphemeralFields(room) {
   return {
     ...room,
-    participants: room.participants.map(
-      ({ online: _online, lastSeen: _lastSeen, ...p }) => p,
-    ),
+    participants: room.participants.map(normalizeStoredParticipant),
+  };
+}
+
+function participantIsFacilitator(participant) {
+  return Boolean(participant?.isFacilitator ?? participant?.isInitiator);
+}
+
+function normalizeStoredParticipant(participant) {
+  const { online: _online, lastSeen: _lastSeen, isInitiator: _isInitiator, ...rest } =
+    participant;
+  return {
+    ...rest,
+    isFacilitator: participantIsFacilitator(participant),
   };
 }
 
@@ -84,7 +95,7 @@ function enrichRoomWithPresence(room) {
     participants: room.participants.map((p) => ({
       id: p.id,
       fullName: p.fullName,
-      isFacilitator: p.isFacilitator,
+      isFacilitator: participantIsFacilitator(p),
       joinedAt: p.joinedAt,
       online: isOnline(p.lastSeen),
     })),
@@ -440,6 +451,7 @@ const server = createServer(async (req, res) => {
       if (!stripped.cards) {
         stripped.cards = [];
       }
+      stripped.participants = stripped.participants.map(normalizeStoredParticipant);
       rooms.set(id, stripped);
       send(res, 200, enrichRoomForClient(rooms.get(id)), origin);
       return;

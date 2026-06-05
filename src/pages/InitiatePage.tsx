@@ -4,6 +4,7 @@ import { Button } from "../components/Button";
 import { PageCard } from "../components/PageCard";
 import {
   createRetro,
+  saveFacilitatorSession,
   saveParticipantSession,
 } from "../lib/retroStore";
 
@@ -25,6 +26,7 @@ export function InitiatePage() {
     try {
       const { retro, participantId } = await createRetro(title, name);
       saveParticipantSession(retro.id, participantId);
+      saveFacilitatorSession(retro.id, participantId);
       navigate(`/retro/${retro.id}`);
     } catch (err) {
       setError(
