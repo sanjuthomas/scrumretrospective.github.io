@@ -4,6 +4,14 @@ import { randomUUID } from "node:crypto";
 const PORT = Number(process.env.PORT ?? process.env.SYNC_PORT) || 8787;
 const PRESENCE_TIMEOUT_MS = 12000;
 
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS ??
+  "https://scrumretrospective.org,https://www.scrumretrospective.org"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const VALID_FOUR_LS_COLUMNS = new Set([
   "liked",
   "learned",
@@ -21,10 +29,10 @@ function corsHeaders(origin) {
     "Access-Control-Allow-Headers": "Content-Type",
     "Content-Type": "application/json",
   };
-  if (origin) {
+  if (origin && (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin))) {
     headers["Access-Control-Allow-Origin"] = origin;
     headers["Access-Control-Allow-Credentials"] = "true";
-  } else {
+  } else if (!origin) {
     headers["Access-Control-Allow-Origin"] = "*";
   }
   return headers;

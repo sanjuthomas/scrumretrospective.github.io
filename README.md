@@ -71,15 +71,32 @@ A `public/CNAME` file is included for the custom domain `scrumretrospective.org`
 
 ### 2. Railway (sync API)
 
-1. Create a new [Railway](https://railway.app) project from this repo.
-2. Set the service **Root Directory** to `server`.
-3. Railway runs `node index.mjs` (see `server/railway.toml`). It listens on `PORT` (Railway sets this automatically).
-4. Copy the public URL and append `/api` — that is your `VITE_SYNC_API_URL` for GitHub Actions.
-5. Optional: add a custom domain in Railway and use that URL instead.
+**Option A — Railway dashboard (recommended first time)**
 
-Health check: `GET /api/health` → `{ "ok": true }`
+1. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo**.
+2. Select `sanjuthomas/scrumretrospective.github.io`.
+3. Open the service **Settings**:
+   - **Root Directory:** `server`
+   - **Start Command:** `node index.mjs` (or leave default if `server/railway.toml` is picked up)
+4. **Settings → Networking → Generate Domain** (e.g. `scrum-retro-production.up.railway.app`).
+5. Confirm health: `https://YOUR-RAILWAY-DOMAIN/api/health` → `{"ok":true}`.
+6. Optional env var **ALLOWED_ORIGINS** — defaults to `https://scrumretrospective.org,https://www.scrumretrospective.org`.
 
-**Note:** Room data is in-memory. Redeploying or restarting the Railway service clears active sessions.
+**Option B — GitHub Actions (auto-deploy on `server/` changes)**
+
+1. Railway → your project → **Settings → Tokens** → create a **Project token**.
+2. GitHub repo → **Settings → Secrets and variables → Actions → Secrets** → `RAILWAY_TOKEN` = that token.
+3. Link the Railway service to this repo (dashboard deploy once), then pushes to `server/**` run `.github/workflows/railway-sync.yml`.
+
+**Wire the live site to Railway**
+
+1. GitHub repo → **Settings → Secrets and variables → Actions → Variables**:
+   - `VITE_SYNC_API_URL` = `https://YOUR-RAILWAY-DOMAIN/api` (must end with `/api`)
+2. Re-run **Deploy to GitHub Pages** (Actions tab → workflow → **Run workflow**) or push any commit to `main`.
+
+Until `VITE_SYNC_API_URL` is set and Pages redeploys, the UI calls `/api` on GitHub Pages and retros will not sync.
+
+**Note:** Room data is in-memory. Redeploying or restarting Railway clears active sessions.
 
 ### Local development
 

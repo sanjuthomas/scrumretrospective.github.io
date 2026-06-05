@@ -1,0 +1,26 @@
+# Optional: deploy sync API to Railway when server/ changes.
+# Secrets: RAILWAY_TOKEN (project token), RAILWAY_SERVICE_ID (service UUID from Railway).
+name: Deploy sync API to Railway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ secrets.RAILWAY_TOKEN != '' && secrets.RAILWAY_SERVICE_ID != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @railway/cli
+      - name: Deploy server
+        working-directory: server
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --detach --service "${{ secrets.RAILWAY_SERVICE_ID }}"
