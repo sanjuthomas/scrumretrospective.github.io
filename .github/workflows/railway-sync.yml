@@ -11,16 +11,29 @@ on:
 
 jobs:
   deploy:
-    if: ${{ secrets.RAILWAY_TOKEN != '' && secrets.RAILWAY_SERVICE_ID != '' }}
     runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
     steps:
+      - name: Check Railway secrets
+        id: check
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ] || [ -z "$RAILWAY_SERVICE_ID" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping deploy: set RAILWAY_TOKEN and RAILWAY_SERVICE_ID in GitHub Actions secrets."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != 'true'
       - uses: actions/setup-node@v4
+        if: steps.check.outputs.skip != 'true'
         with:
           node-version: 22
-      - run: npm install -g @railway/cli
+      - if: steps.check.outputs.skip != 'true'
+        run: npm install -g @railway/cli
       - name: Deploy server
+        if: steps.check.outputs.skip != 'true'
         working-directory: server
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --detach --service "${{ secrets.RAILWAY_SERVICE_ID }}"
+        run: railway up --detach --service "$RAILWAY_SERVICE_ID"
