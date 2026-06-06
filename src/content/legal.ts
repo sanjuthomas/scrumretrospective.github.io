@@ -4,6 +4,7 @@ export const SITE_NAME = "Scrum Retrospective";
 export const SITE_URL = "https://scrumretrospective.org";
 export const GITHUB_REPO_URL =
   "https://github.com/sanjuthomas/scrumretrospective.github.io";
+export const PERSONAL_BLOG_URL = "https://sanjuthomas.com";
 
 export interface LegalSection {
   title: string;

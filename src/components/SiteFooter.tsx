@@ -3,6 +3,7 @@ import {
   COPYRIGHT_OWNER,
   COPYRIGHT_YEAR,
   GITHUB_REPO_URL,
+  PERSONAL_BLOG_URL,
   SITE_NAME,
 } from "../content/legal";
 
@@ -10,8 +11,11 @@ export function SiteFooter() {
   return (
     <footer className="site-footer">
       <p className="site-footer__copy">
-        © {COPYRIGHT_YEAR} {COPYRIGHT_OWNER}. {SITE_NAME} is provided as is with
-        no warranty.
+        © {COPYRIGHT_YEAR}{" "}
+        <a href={PERSONAL_BLOG_URL} target="_blank" rel="noopener noreferrer">
+          {COPYRIGHT_OWNER}
+        </a>
+        . {SITE_NAME} is provided as is with no warranty.
       </p>
       <nav className="site-footer__nav" aria-label="Footer links">
         <Link to="/terms">Terms of Use</Link>
