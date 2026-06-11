@@ -67,13 +67,17 @@ The app splits into two parts:
 | **Static UI** | GitHub Pages | React app at [scrumretrospective.org](https://scrumretrospective.org) |
 | **Sync API** | Railway | In-memory room sync (`server/index.mjs`) |
 
+**Production releases are tag-based.** Merging to `main` runs tests only. To deploy, push a semver tag (e.g. `v1.0.0`). The site footer shows that version. See **[docs/RELEASING.md](docs/RELEASING.md)** for the full release process.
+
+Changes land on `main` via **pull request** only (no direct commits to `main`).
+
 ### 1. GitHub Pages (static UI)
 
 1. In the repo **Settings → Pages**, set **Source** to **GitHub Actions**.
 2. Add a repository variable: **Settings → Secrets and variables → Actions → Variables**
    - Name: `VITE_SYNC_API_URL`
    - Value: your Railway sync API base URL, e.g. `https://your-app.up.railway.app/api`
-3. Push to `main` — the workflow builds with that URL baked in and deploys `dist/`.
+3. Push a version tag — e.g. `git tag v1.0.0 && git push origin v1.0.0` — the workflow tests, builds with that version in the footer, and deploys `dist/`.
 
 ```bash
 npm run build
@@ -94,17 +98,17 @@ A `public/CNAME` file is included for the custom domain `scrumretrospective.org`
 5. Confirm health: `https://YOUR-RAILWAY-DOMAIN/api/health` → `{"ok":true}`.
 6. Optional env var **ALLOWED_ORIGINS** — defaults to `https://scrumretrospective.org,https://www.scrumretrospective.org`.
 
-**Option B — GitHub Actions (auto-deploy on `server/` changes)**
+**Option B — GitHub Actions (deploy on version tags)**
 
 1. Railway → your project → **Settings → Tokens** → create a **Project token**.
 2. GitHub repo → **Settings → Secrets and variables → Actions → Secrets** → `RAILWAY_TOKEN` = that token.
-3. Link the Railway service to this repo (dashboard deploy once), then pushes to `server/**` run `.github/workflows/railway-sync.yml`.
+3. Link the Railway service to this repo (dashboard deploy once), then pushing a version tag (e.g. `v1.0.0`) runs `.github/workflows/railway-sync.yml`.
 
 **Wire the live site to Railway**
 
 1. GitHub repo → **Settings → Secrets and variables → Actions → Variables**:
    - `VITE_SYNC_API_URL` = `https://YOUR-RAILWAY-DOMAIN/api` (must end with `/api`)
-2. Re-run **Deploy to GitHub Pages** (Actions tab → workflow → **Run workflow**) or push any commit to `main`.
+2. Push a new version tag (or re-run **Deploy to GitHub Pages** manually with a version label).
 
 Until `VITE_SYNC_API_URL` is set and Pages redeploys, the UI calls `/api` on GitHub Pages and retros will not sync.
 
@@ -136,7 +140,7 @@ npm run test:watch       # unit tests in watch mode
 npm run test:integration # local end-to-end sync API flow
 ```
 
-Integration tests start `server/index.mjs` on a random local port and are intentionally **not** run in CI.
+Integration tests also run in CI against a local sync API on the GitHub Actions runner (no Railway required).
 
 ## Storage model
 

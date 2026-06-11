@@ -1,12 +1,11 @@
-# Optional: deploy sync API to Railway when server/ changes.
+# Deploy sync API to Railway on version tags (paired with GitHub Pages release).
 # Secrets: RAILWAY_TOKEN (project token), RAILWAY_SERVICE_ID (service UUID from Railway).
 name: Deploy sync API to Railway
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "server/**"
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:

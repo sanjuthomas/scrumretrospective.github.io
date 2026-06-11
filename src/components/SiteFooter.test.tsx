@@ -17,5 +17,9 @@ describe("SiteFooter", () => {
       "href",
       expect.stringContaining("github.com"),
     );
+    expect(screen.getByRole("link", { name: "v1.0.0" })).toHaveAttribute(
+      "href",
+      "https://github.com/sanjuthomas/scrumretrospective.github.io/releases/tag/v1.0.0",
+    );
   });
 });

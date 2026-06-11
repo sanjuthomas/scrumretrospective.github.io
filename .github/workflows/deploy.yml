@@ -1,9 +1,16 @@
+# Production deploys run only for version tags (v*), not every push to main.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label shown in the site footer (e.g. v1.0.0)"
+        required: true
+        default: "manual"
 
 permissions:
   contents: read
@@ -12,10 +19,11 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build:
+  unit:
+    name: Unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +32,68 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run test:coverage
+
+  integration:
+    name: Integration tests (local sync API)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start local sync API
+        run: |
+          node server/index.mjs &
+          echo "$!" > sync-server.pid
+        env:
+          PORT: 8787
+          ALLOWED_ORIGINS: "*"
+      - name: Wait for sync API health
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8787/api/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Sync API did not become healthy in time"
+          exit 1
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          INTEGRATION_SYNC_API_URL: http://127.0.0.1:8787/api
+      - name: Stop local sync API
+        if: always()
+        run: |
+          if [ -f sync-server.pid ]; then
+            kill "$(cat sync-server.pid)" 2>/dev/null || true
+          fi
+
+  build:
+    needs: [unit, integration]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Resolve release version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "label=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
       - run: npm run build
         env:
           VITE_SYNC_API_URL: ${{ vars.VITE_SYNC_API_URL }}
+          VITE_APP_VERSION: ${{ steps.version.outputs.label }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
