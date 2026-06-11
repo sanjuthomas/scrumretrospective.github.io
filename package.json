@@ -10,10 +10,11 @@
     "dev:sync": "node server/index.mjs",
     "build": "tsc -b && vite build && cp dist/index.html dist/404.html",
     "preview": "vite preview",
-    "test": "vitest run --project unit",
-    "test:coverage": "vitest run --project unit --coverage",
-    "test:watch": "vitest --project unit",
-    "test:integration": "vitest run --project integration"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration:docker": "docker compose -f docker-compose.test.yml up -d --wait && INTEGRATION_SYNC_API_URL=http://127.0.0.1:8787/api npm run test:integration; code=$?; docker compose -f docker-compose.test.yml down; exit $code"
   },
   "dependencies": {
     "jspdf": "^4.2.1",

@@ -1,0 +1,7 @@
+services:
+  sync-api:
+    build: ./server
+    ports:
+      - "8787:8787"
+    environment:
+      ALLOWED_ORIGINS: "*"

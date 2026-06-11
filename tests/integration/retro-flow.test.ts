@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { apiJson, startSyncServer, type SyncServerHandle } from "./helpers";
+import { acquireSyncServer, apiJson, type SyncServerHandle } from "./helpers";
 
 interface Participant {
   id: string;
@@ -31,7 +31,7 @@ interface RetroResponse {
 let server: SyncServerHandle;
 
 beforeAll(async () => {
-  server = await startSyncServer();
+  server = await acquireSyncServer();
 }, 30_000);
 
 afterAll(async () => {

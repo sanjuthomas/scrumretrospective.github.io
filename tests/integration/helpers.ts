@@ -30,7 +30,7 @@ function getFreePort(): Promise<number> {
   });
 }
 
-async function waitForHealth(url: string, timeoutMs = 10_000): Promise<void> {
+export async function waitForHealth(url: string, timeoutMs = 10_000): Promise<void> {
   const started = Date.now();
 
   while (Date.now() - started < timeoutMs) {
@@ -44,6 +44,32 @@ async function waitForHealth(url: string, timeoutMs = 10_000): Promise<void> {
   }
 
   throw new Error(`Timed out waiting for sync server at ${url}`);
+}
+
+function parseConfiguredApiBase(): string | null {
+  const raw = process.env.INTEGRATION_SYNC_API_URL?.trim();
+  if (!raw) return null;
+  return raw.replace(/\/$/, "");
+}
+
+/**
+ * Uses INTEGRATION_SYNC_API_URL when set (CI background server or Docker).
+ * Otherwise spawns server/index.mjs on a free local port for this test run.
+ */
+export async function acquireSyncServer(): Promise<SyncServerHandle> {
+  const configured = parseConfiguredApiBase();
+  if (configured) {
+    const healthUrl = `${configured}/health`;
+    await waitForHealth(healthUrl);
+    const port = Number(new URL(configured).port) || 8787;
+    return {
+      apiBase: configured,
+      port,
+      stop: async () => undefined,
+    };
+  }
+
+  return startSyncServer();
 }
 
 export async function startSyncServer(): Promise<SyncServerHandle> {

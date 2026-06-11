@@ -19,26 +19,7 @@ export default defineConfig({
         statements: 80,
       },
     },
-    projects: [
-      {
-        extends: true,
-        test: {
-          name: "unit",
-          environment: "happy-dom",
-          include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
-        },
-      },
-      {
-        extends: true,
-        test: {
-          name: "integration",
-          environment: "node",
-          include: ["tests/integration/**/*.test.ts"],
-          testTimeout: 30_000,
-          hookTimeout: 30_000,
-          pool: "forks",
-        },
-      },
-    ],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    environment: "happy-dom",
   },
 });

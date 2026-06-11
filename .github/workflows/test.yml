@@ -1,4 +1,5 @@
-name: Unit tests
+# Unit tests use mocked fetch. Integration tests hit a local sync API on the runner (not Railway).
+name: Tests
 
 on:
   push:
@@ -8,6 +9,7 @@ on:
 
 jobs:
   unit:
+    name: Unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +19,41 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:coverage
+
+  integration:
+    name: Integration tests (local sync API)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start local sync API
+        run: |
+          node server/index.mjs &
+          echo "$!" > sync-server.pid
+        env:
+          PORT: 8787
+          ALLOWED_ORIGINS: "*"
+      - name: Wait for sync API health
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8787/api/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Sync API did not become healthy in time"
+          exit 1
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          INTEGRATION_SYNC_API_URL: http://127.0.0.1:8787/api
+      - name: Stop local sync API
+        if: always()
+        run: |
+          if [ -f sync-server.pid ]; then
+            kill "$(cat sync-server.pid)" 2>/dev/null || true
+          fi
