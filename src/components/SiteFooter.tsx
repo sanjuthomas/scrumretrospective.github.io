@@ -6,8 +6,11 @@ import {
   PERSONAL_BLOG_URL,
   SITE_NAME,
 } from "../content/legal";
+import { getAppVersion, getReleaseTagUrl } from "../lib/version";
 
 export function SiteFooter() {
+  const version = getAppVersion();
+
   return (
     <footer className="site-footer">
       <p className="site-footer__copy">
@@ -28,6 +31,17 @@ export function SiteFooter() {
         </span>
         <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
           GitHub
+        </a>
+        <span className="site-footer__sep" aria-hidden="true">
+          ·
+        </span>
+        <a
+          href={getReleaseTagUrl(version)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="site-footer__version"
+        >
+          {version}
         </a>
       </nav>
     </footer>

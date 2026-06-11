@@ -1,7 +1,19 @@
+import { readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { defineConfig, mergeConfig } from "vitest/config";
+import viteConfig from "./vite.config";
 
-export default defineConfig({
+const pkg = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
+) as { version: string };
+
+if (!process.env.VITE_APP_VERSION) {
+  process.env.VITE_APP_VERSION = `v${pkg.version}`;
+}
+
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
   plugins: [react()],
   test: {
     setupFiles: ["./src/test/setup.ts"],
@@ -22,4 +34,5 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     environment: "happy-dom",
   },
-});
+  }),
+);
