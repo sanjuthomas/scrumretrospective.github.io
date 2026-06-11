@@ -154,6 +154,7 @@ export function SessionPage() {
   async function handleTransferFacilitator(toParticipantId: string) {
     if (
       !retroId ||
+      !retro ||
       !currentParticipantId ||
       !isFacilitator ||
       transferringFacilitatorId
