@@ -37,7 +37,11 @@ Actions → **Deploy to GitHub Pages** → **Run workflow**. Enter the version l
 
 ## Branch protection
 
-`main` should require pull requests and passing status checks. In the repo **Settings → Branches → Branch protection rules** for `main`:
+`main` requires pull requests and passing status checks:
 
 - Require a pull request before merging
 - Require status checks: `Unit tests`, `Integration tests (local sync API)`
+
+## GitHub Pages environment
+
+The **github-pages** deployment environment must allow `v*` tags (not only `main`). In **Settings → Environments → github-pages → Deployment branches and tags**, include a tag rule `v*`. Without this, tag-triggered deploys are rejected.
