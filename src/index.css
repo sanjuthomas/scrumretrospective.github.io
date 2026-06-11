@@ -512,6 +512,29 @@ a {
   border-color: var(--highlight);
 }
 
+.participant-pane__transfer-btn {
+  flex: 1 1 100%;
+  margin-top: 0.15rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.participant-pane__transfer-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--sky-muted);
+}
+
+.participant-pane__transfer-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .session-main {
   flex: 1;
   display: flex;

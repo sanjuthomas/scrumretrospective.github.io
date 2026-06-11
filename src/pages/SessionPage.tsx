@@ -19,6 +19,7 @@ import {
   startRetro,
   startVoting,
   closeVoting,
+  transferFacilitatorRole,
 } from "../lib/retroStore";
 
 export function SessionPage() {
@@ -38,6 +39,12 @@ export function SessionPage() {
   const [closeVotingError, setCloseVotingError] = useState<string | null>(null);
   const [endingRetro, setEndingRetro] = useState(false);
   const [endRetroError, setEndRetroError] = useState<string | null>(null);
+  const [transferringFacilitatorId, setTransferringFacilitatorId] = useState<
+    string | null
+  >(null);
+  const [transferFacilitatorError, setTransferFacilitatorError] = useState<
+    string | null
+  >(null);
 
   if (!retroId) {
     return (
@@ -144,6 +151,48 @@ export function SessionPage() {
     }
   }
 
+  async function handleTransferFacilitator(toParticipantId: string) {
+    if (
+      !retroId ||
+      !currentParticipantId ||
+      !isFacilitator ||
+      transferringFacilitatorId
+    ) {
+      return;
+    }
+
+    const nextFacilitator = retro.participants.find(
+      (p) => p.id === toParticipantId,
+    );
+    if (!nextFacilitator || nextFacilitator.isFacilitator) return;
+
+    const confirmed = window.confirm(
+      `Make ${nextFacilitator.fullName} the facilitator? You will lose facilitator controls.`,
+    );
+    if (!confirmed) return;
+
+    setTransferringFacilitatorId(toParticipantId);
+    setTransferFacilitatorError(null);
+    try {
+      const updated = await transferFacilitatorRole(
+        retroId,
+        currentParticipantId,
+        toParticipantId,
+      );
+      if (!updated) {
+        throw new Error("Could not transfer facilitator role.");
+      }
+    } catch (err) {
+      setTransferFacilitatorError(
+        err instanceof Error
+          ? err.message
+          : "Could not transfer facilitator role.",
+      );
+    } finally {
+      setTransferringFacilitatorId(null);
+    }
+  }
+
   async function handleEndRetro() {
     if (!retroId || !retro || endingRetro || !isFacilitator || !isResults) return;
     setEndingRetro(true);
@@ -166,6 +215,9 @@ export function SessionPage() {
       <ParticipantPane
         participants={participants}
         currentParticipantId={currentParticipantId}
+        canTransferFacilitator={isFacilitator && participants.length > 1}
+        transferringParticipantId={transferringFacilitatorId}
+        onTransferFacilitator={handleTransferFacilitator}
       />
       <main className="session-main">
         <div className="session-top">
@@ -215,9 +267,15 @@ export function SessionPage() {
                 </Button>
               )}
             </div>
-            {(startVotingError || closeVotingError || endRetroError) && (
+            {(startVotingError ||
+              closeVotingError ||
+              endRetroError ||
+              transferFacilitatorError) && (
               <p className="error-text session-top__phase-error">
-                {startVotingError ?? closeVotingError ?? endRetroError}
+                {startVotingError ??
+                  closeVotingError ??
+                  endRetroError ??
+                  transferFacilitatorError}
               </p>
             )}
           </section>

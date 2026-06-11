@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Retrospective } from "../lib/retroStore";
 import { renderWithRouter } from "../test/renderWithRouter";
 import { SessionPage } from "./SessionPage";
@@ -12,6 +12,7 @@ const startVoting = vi.fn();
 const closeVoting = vi.fn();
 const endRetro = vi.fn();
 const downloadRetroPdf = vi.fn();
+const transferFacilitatorRole = vi.fn();
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>(
@@ -49,6 +50,8 @@ vi.mock("../lib/retroStore", async () => {
     startVoting: (...args: unknown[]) => startVoting(...args),
     closeVoting: (...args: unknown[]) => closeVoting(...args),
     endRetro: (...args: unknown[]) => endRetro(...args),
+    transferFacilitatorRole: (...args: unknown[]) =>
+      transferFacilitatorRole(...args),
   };
 });
 
@@ -74,6 +77,11 @@ function makeRetro(overrides: Partial<Retrospective> = {}): Retrospective {
 }
 
 describe("SessionPage", () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
   it("shows loading and missing states", () => {
     useRetro.mockReturnValue({ retro: null, loading: true });
     const { rerender } = renderWithRouter(<SessionPage />);
@@ -118,5 +126,116 @@ describe("SessionPage", () => {
     expect(downloadRetroPdf).toHaveBeenCalledWith(results);
     expect(endRetro).toHaveBeenCalledWith("retro-1");
     expect(navigate).toHaveBeenCalledWith("/");
+  });
+
+  it("transfers facilitator role after confirmation", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const retro = makeRetro({
+      phase: "active",
+      participants: [
+        {
+          id: "fac-1",
+          fullName: "Facilitator",
+          isFacilitator: true,
+          joinedAt: 1,
+          online: true,
+        },
+        {
+          id: "part-1",
+          fullName: "Alex",
+          isFacilitator: false,
+          joinedAt: 2,
+          online: true,
+        },
+      ],
+    });
+
+    useRetro.mockReturnValue({ retro, loading: false });
+    transferFacilitatorRole.mockResolvedValue({
+      ...retro,
+      participants: retro.participants.map((p) => ({
+        ...p,
+        isFacilitator: p.id === "part-1",
+      })),
+    });
+
+    renderWithRouter(<SessionPage />);
+    await user.click(screen.getByRole("button", { name: "Make Alex facilitator" }));
+
+    expect(confirm).toHaveBeenCalled();
+    expect(transferFacilitatorRole).toHaveBeenCalledWith(
+      "retro-1",
+      "fac-1",
+      "part-1",
+    );
+
+    confirm.mockRestore();
+  });
+
+  it("does not transfer facilitator role when confirmation is cancelled", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const retro = makeRetro({
+      phase: "active",
+      participants: [
+        {
+          id: "fac-1",
+          fullName: "Facilitator",
+          isFacilitator: true,
+          joinedAt: 1,
+          online: true,
+        },
+        {
+          id: "part-1",
+          fullName: "Alex",
+          isFacilitator: false,
+          joinedAt: 2,
+          online: true,
+        },
+      ],
+    });
+
+    useRetro.mockReturnValue({ retro, loading: false });
+    renderWithRouter(<SessionPage />);
+    await user.click(screen.getByRole("button", { name: "Make Alex facilitator" }));
+
+    expect(transferFacilitatorRole).not.toHaveBeenCalled();
+
+    confirm.mockRestore();
+  });
+
+  it("shows an error when facilitator transfer fails", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const retro = makeRetro({
+      phase: "active",
+      participants: [
+        {
+          id: "fac-1",
+          fullName: "Facilitator",
+          isFacilitator: true,
+          joinedAt: 1,
+          online: true,
+        },
+        {
+          id: "part-1",
+          fullName: "Alex",
+          isFacilitator: false,
+          joinedAt: 2,
+          online: true,
+        },
+      ],
+    });
+
+    useRetro.mockReturnValue({ retro, loading: false });
+    transferFacilitatorRole.mockRejectedValue(new Error("Transfer blocked"));
+
+    renderWithRouter(<SessionPage />);
+    await user.click(screen.getByRole("button", { name: "Make Alex facilitator" }));
+
+    expect(screen.getByText("Transfer blocked")).toBeInTheDocument();
+
+    confirm.mockRestore();
   });
 });

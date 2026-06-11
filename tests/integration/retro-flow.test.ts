@@ -331,6 +331,65 @@ describe("retro end-to-end flow", () => {
     expect(invalidColumn.status).toBe(400);
   });
 
+  it("transfers facilitator mid-session and keeps exactly one facilitator", async () => {
+    const retroId = crypto.randomUUID();
+    const facilitatorId = crypto.randomUUID();
+    const participantId = crypto.randomUUID();
+
+    await apiJson<RetroResponse>(server.apiBase, `/retrospectives/${retroId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        id: retroId,
+        name: "Handoff Retro",
+        createdAt: Date.now(),
+        template: "fourLs",
+        phase: "assembly",
+        cards: [],
+        participants: [
+          {
+            id: facilitatorId,
+            fullName: "Facilitator",
+            isFacilitator: true,
+            joinedAt: Date.now(),
+          },
+          {
+            id: participantId,
+            fullName: "Participant",
+            isFacilitator: false,
+            joinedAt: Date.now(),
+          },
+        ],
+      }),
+    });
+
+    const transfer = await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}/facilitator/transfer`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          fromParticipantId: facilitatorId,
+          toParticipantId: participantId,
+        }),
+      },
+    );
+
+    expect(transfer.status).toBe(200);
+    const facilitators = transfer.body.participants.filter((p) => p.isFacilitator);
+    expect(facilitators).toHaveLength(1);
+    expect(facilitators[0]?.id).toBe(participantId);
+
+    const fetched = await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}`,
+    );
+
+    expect(fetched.status).toBe(200);
+    expect(
+      fetched.body.participants.find((p) => p.id === participantId)?.isFacilitator,
+    ).toBe(true);
+  });
+
   it("preserves Mad Sad Glad template when a phase update omits template", async () => {
     const retroId = crypto.randomUUID();
     const facilitatorId = crypto.randomUUID();

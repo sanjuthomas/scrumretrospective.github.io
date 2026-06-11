@@ -163,6 +163,31 @@ function updateParticipantLastSeen(room, participantId, lastSeen) {
   };
 }
 
+function transferFacilitatorInRoom(room, fromParticipantId, toParticipantId) {
+  const fromParticipant = room.participants.find((p) => p.id === fromParticipantId);
+  const toParticipant = room.participants.find((p) => p.id === toParticipantId);
+
+  if (!fromParticipant || !toParticipant) {
+    return { error: "Participant not found", status: 404 };
+  }
+  if (!participantIsFacilitator(fromParticipant)) {
+    return { error: "Only the facilitator can transfer the role", status: 403 };
+  }
+  if (fromParticipantId === toParticipantId) {
+    return { error: "Cannot transfer facilitator role to yourself", status: 400 };
+  }
+
+  return {
+    room: {
+      ...room,
+      participants: room.participants.map((p) => ({
+        ...p,
+        isFacilitator: p.id === toParticipantId,
+      })),
+    },
+  };
+}
+
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin;
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
@@ -383,6 +408,55 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  const transferMatch = url.pathname.match(
+    /^\/api\/retrospectives\/([^/]+)\/facilitator\/transfer$/,
+  );
+  if (transferMatch && req.method === "POST") {
+    const roomId = decodeURIComponent(transferMatch[1]);
+    try {
+      const body = await readBody(req);
+      const fromParticipantId = body?.fromParticipantId;
+      const toParticipantId = body?.toParticipantId;
+
+      if (!fromParticipantId || !toParticipantId) {
+        send(
+          res,
+          400,
+          { error: "fromParticipantId and toParticipantId are required" },
+          origin,
+        );
+        return;
+      }
+
+      const room = rooms.get(roomId);
+      if (!room) {
+        send(res, 404, { error: "Not found" }, origin);
+        return;
+      }
+
+      const result = transferFacilitatorInRoom(
+        room,
+        fromParticipantId,
+        toParticipantId,
+      );
+      if (result.error) {
+        send(res, result.status, { error: result.error }, origin);
+        return;
+      }
+
+      const updated = {
+        ...result.room,
+        participants: result.room.participants.map(normalizeStoredParticipant),
+      };
+      rooms.set(roomId, updated);
+      send(res, 200, enrichRoomForClient(updated), origin);
+      return;
+    } catch {
+      send(res, 400, { error: "Invalid JSON" }, origin);
+      return;
+    }
+  }
+
   const match = url.pathname.match(/^\/api\/retrospectives\/([^/]+)$/);
   if (!match) {
     send(res, 404, { error: "Not found" }, origin);
@@ -419,10 +493,18 @@ const server = createServer(async (req, res) => {
         const lastSeenById = new Map(
           existing.participants.map((p) => [p.id, p.lastSeen]),
         );
-        stripped.participants = stripped.participants.map((p) => ({
-          ...p,
-          lastSeen: lastSeenById.get(p.id),
-        }));
+        stripped.participants = stripped.participants.map((p) => {
+          const existingParticipant = existing.participants.find(
+            (ep) => ep.id === p.id,
+          );
+          return {
+            ...p,
+            isFacilitator: existingParticipant
+              ? participantIsFacilitator(existingParticipant)
+              : false,
+            lastSeen: lastSeenById.get(p.id),
+          };
+        });
         if (!stripped.cards) {
           stripped.cards = existing.cards ?? [];
         }

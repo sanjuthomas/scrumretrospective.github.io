@@ -1,4 +1,11 @@
-import { addRetroCard, castRetroVote, deleteRetro, fetchRetro, saveRetro } from "./retroApi";
+import {
+  addRetroCard,
+  castRetroVote,
+  deleteRetro,
+  fetchRetro,
+  saveRetro,
+  transferRetroFacilitator,
+} from "./retroApi";
 import { normalizeParticipant } from "./participants";
 import type { CardVoteCounts } from "./votes";
 
@@ -188,6 +195,10 @@ export function getFacilitatorSession(retroId: string): string | null {
   return sessionStorage.getItem(`${FACILITATOR_SESSION_PREFIX}${retroId}`);
 }
 
+export function clearFacilitatorSession(retroId: string): void {
+  sessionStorage.removeItem(`${FACILITATOR_SESSION_PREFIX}${retroId}`);
+}
+
 export function isCurrentFacilitator(
   retro: Retrospective,
   retroId: string,
@@ -195,13 +206,36 @@ export function isCurrentFacilitator(
 ): boolean {
   if (!participantId) return false;
 
-  if (getFacilitatorSession(retroId) === participantId) {
-    return true;
+  const participant = retro.participants.find((p) => p.id === participantId);
+  if (participant) {
+    return participant.isFacilitator;
   }
 
-  return retro.participants.some(
-    (p) => p.id === participantId && p.isFacilitator,
-  );
+  return getFacilitatorSession(retroId) === participantId;
+}
+
+export async function transferFacilitatorRole(
+  retroId: string,
+  fromParticipantId: string,
+  toParticipantId: string,
+): Promise<Retrospective | null> {
+  const updated = await transferRetroFacilitator(retroId, {
+    fromParticipantId,
+    toParticipantId,
+  });
+  if (!updated) return null;
+
+  cacheRetro(updated);
+
+  const currentParticipantId = getParticipantSession(retroId);
+  if (currentParticipantId === fromParticipantId) {
+    clearFacilitatorSession(retroId);
+  }
+  if (currentParticipantId === toParticipantId) {
+    saveFacilitatorSession(retroId, toParticipantId);
+  }
+
+  return updated;
 }
 
 export function getParticipantSession(retroId: string): string | null {

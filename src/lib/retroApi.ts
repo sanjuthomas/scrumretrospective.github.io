@@ -135,6 +135,37 @@ export async function castRetroVote(
   }
 }
 
+export async function transferRetroFacilitator(
+  retroId: string,
+  payload: {
+    fromParticipantId: string;
+    toParticipantId: string;
+  },
+): Promise<Retrospective | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/retrospectives/${retroId}/facilitator/transfer`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      throw new Error(body?.error ?? `transfer failed: ${res.status}`);
+    }
+    const retro = (await res.json()) as Retrospective;
+    return normalizeRetroParticipants(retro);
+  } catch (err) {
+    if (err instanceof Error) throw err;
+    return null;
+  }
+}
+
 export async function deleteRetro(id: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/retrospectives/${id}`, {

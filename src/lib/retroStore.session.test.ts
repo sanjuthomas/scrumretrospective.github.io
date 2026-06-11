@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Retrospective } from "./retroStore";
 import {
+  clearFacilitatorSession,
   getFacilitatorSession,
   getJoinUrl,
   isCurrentFacilitator,
@@ -45,19 +46,38 @@ describe("session helpers", () => {
     expect(isCurrentFacilitator(retro, retroId, "part-1")).toBe(false);
   });
 
-  it("detects facilitator from stored facilitator session", () => {
+  it("uses server facilitator role when the participant is in the retro", () => {
     saveFacilitatorSession(retroId, "fac-1");
-    saveParticipantSession(retroId, "fac-1");
 
-    const retroWithoutRole: Retrospective = {
+    const transferred: Retrospective = {
       ...retro,
       participants: retro.participants.map((participant) => ({
         ...participant,
-        isFacilitator: false,
+        isFacilitator: participant.id === "part-1",
       })),
     };
 
-    expect(isCurrentFacilitator(retroWithoutRole, retroId, "fac-1")).toBe(true);
+    expect(isCurrentFacilitator(transferred, retroId, "fac-1")).toBe(false);
+    expect(isCurrentFacilitator(transferred, retroId, "part-1")).toBe(true);
+  });
+
+  it("clears stored facilitator session keys", () => {
+    saveFacilitatorSession(retroId, "fac-1");
+    clearFacilitatorSession(retroId);
+    expect(getFacilitatorSession(retroId)).toBeNull();
+  });
+
+  it("falls back to facilitator session before the participant list is available", () => {
+    saveFacilitatorSession(retroId, "fac-1");
+
+    const emptyParticipants: Retrospective = {
+      ...retro,
+      participants: [],
+    };
+
+    expect(isCurrentFacilitator(emptyParticipants, retroId, "fac-1")).toBe(
+      true,
+    );
     expect(getFacilitatorSession(retroId)).toBe("fac-1");
   });
 });

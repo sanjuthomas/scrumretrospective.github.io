@@ -334,6 +334,71 @@ describe("sync API happy paths", () => {
     });
   });
 
+  it("lets the facilitator transfer the role to another participant", async () => {
+    const retroId = crypto.randomUUID();
+    const facilitatorId = crypto.randomUUID();
+    const participantId = crypto.randomUUID();
+
+    await apiJson<RetroResponse>(server.apiBase, `/retrospectives/${retroId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        id: retroId,
+        name: "Transfer Retro",
+        createdAt: Date.now(),
+        phase: "assembly",
+        cards: [],
+        participants: [
+          {
+            id: facilitatorId,
+            fullName: "Facilitator",
+            isFacilitator: true,
+            joinedAt: Date.now(),
+          },
+          {
+            id: participantId,
+            fullName: "Participant",
+            isFacilitator: false,
+            joinedAt: Date.now(),
+          },
+        ],
+      }),
+    });
+
+    const transfer = await apiJson<RetroResponse>(
+      server.apiBase,
+      `/retrospectives/${retroId}/facilitator/transfer`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          fromParticipantId: facilitatorId,
+          toParticipantId: participantId,
+        }),
+      },
+    );
+
+    expect(transfer.status).toBe(200);
+    expect(
+      transfer.body.participants.find((p) => p.id === participantId)?.isFacilitator,
+    ).toBe(true);
+    expect(
+      transfer.body.participants.find((p) => p.id === facilitatorId)?.isFacilitator,
+    ).toBe(false);
+
+    const nonFacilitatorTransfer = await apiJson<{ error?: string }>(
+      server.apiBase,
+      `/retrospectives/${retroId}/facilitator/transfer`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          fromParticipantId: facilitatorId,
+          toParticipantId: participantId,
+        }),
+      },
+    );
+
+    expect(nonFacilitatorTransfer.status).toBe(403);
+  });
+
   it("returns a retrospective with GET after creation", async () => {
     const retroId = crypto.randomUUID();
     const { facilitatorId, ...payload } = createRetroPayload(retroId, {

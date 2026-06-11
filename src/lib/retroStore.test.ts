@@ -6,6 +6,7 @@ const saveRetro = vi.fn();
 const addRetroCard = vi.fn();
 const castRetroVote = vi.fn();
 const deleteRetro = vi.fn();
+const transferRetroFacilitator = vi.fn();
 
 vi.mock("./retroApi", () => ({
   fetchRetro: (...args: unknown[]) => fetchRetro(...args),
@@ -13,6 +14,8 @@ vi.mock("./retroApi", () => ({
   addRetroCard: (...args: unknown[]) => addRetroCard(...args),
   castRetroVote: (...args: unknown[]) => castRetroVote(...args),
   deleteRetro: (...args: unknown[]) => deleteRetro(...args),
+  transferRetroFacilitator: (...args: unknown[]) =>
+    transferRetroFacilitator(...args),
 }));
 
 function makeRetro(overrides: Partial<Retrospective> = {}): Retrospective {
@@ -352,6 +355,98 @@ describe("retroStore", () => {
     });
 
     unsubscribe();
+  });
+
+  it("transfers facilitator role and updates browser session keys", async () => {
+    const {
+      saveFacilitatorSession,
+      saveParticipantSession,
+      transferFacilitatorRole,
+      getFacilitatorSession,
+    } = await import("./retroStore");
+
+    const retro = makeRetro({
+      participants: [
+        {
+          id: "fac-1",
+          fullName: "Facilitator",
+          isFacilitator: true,
+          joinedAt: 1,
+        },
+        {
+          id: "part-1",
+          fullName: "Participant",
+          isFacilitator: false,
+          joinedAt: 2,
+        },
+      ],
+    });
+    const transferred = makeRetro({
+      participants: [
+        { ...retro.participants[0]!, isFacilitator: false },
+        { ...retro.participants[1]!, isFacilitator: true },
+      ],
+    });
+
+    transferRetroFacilitator.mockResolvedValue(transferred);
+    saveParticipantSession("retro-1", "fac-1");
+    saveFacilitatorSession("retro-1", "fac-1");
+
+    await transferFacilitatorRole("retro-1", "fac-1", "part-1");
+
+    expect(transferRetroFacilitator).toHaveBeenCalledWith("retro-1", {
+      fromParticipantId: "fac-1",
+      toParticipantId: "part-1",
+    });
+    expect(getFacilitatorSession("retro-1")).toBeNull();
+  });
+
+  it("saves facilitator session for the incoming facilitator on this browser", async () => {
+    const {
+      saveFacilitatorSession,
+      saveParticipantSession,
+      transferFacilitatorRole,
+      getFacilitatorSession,
+    } = await import("./retroStore");
+
+    const retro = makeRetro({
+      participants: [
+        {
+          id: "fac-1",
+          fullName: "Facilitator",
+          isFacilitator: true,
+          joinedAt: 1,
+        },
+        {
+          id: "part-1",
+          fullName: "Participant",
+          isFacilitator: false,
+          joinedAt: 2,
+        },
+      ],
+    });
+    const transferred = makeRetro({
+      participants: [
+        { ...retro.participants[0]!, isFacilitator: false },
+        { ...retro.participants[1]!, isFacilitator: true },
+      ],
+    });
+
+    transferRetroFacilitator.mockResolvedValue(transferred);
+    saveParticipantSession("retro-1", "part-1");
+
+    await transferFacilitatorRole("retro-1", "fac-1", "part-1");
+
+    expect(getFacilitatorSession("retro-1")).toBe("part-1");
+  });
+
+  it("returns null when facilitator transfer fails", async () => {
+    const { transferFacilitatorRole } = await import("./retroStore");
+    transferRetroFacilitator.mockResolvedValue(null);
+
+    await expect(
+      transferFacilitatorRole("retro-1", "fac-1", "part-1"),
+    ).resolves.toBeNull();
   });
 
   it("normalizes legacy initiator role when caching", async () => {

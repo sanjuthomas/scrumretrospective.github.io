@@ -273,6 +273,68 @@ describe("castRetroVote", () => {
   });
 });
 
+describe("transferRetroFacilitator", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("posts facilitator transfer requests to the sync API", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => retro,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { transferRetroFacilitator } = await import("./retroApi");
+    await transferRetroFacilitator("retro-1", {
+      fromParticipantId: "p1",
+      toParticipantId: "p2",
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/retrospectives/retro-1/facilitator/transfer");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({
+      fromParticipantId: "p1",
+      toParticipantId: "p2",
+    });
+  });
+
+  it("returns null when the retrospective is missing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ status: 404, ok: false }),
+    );
+
+    const { transferRetroFacilitator } = await import("./retroApi");
+    await expect(
+      transferRetroFacilitator("missing", {
+        fromParticipantId: "p1",
+        toParticipantId: "p2",
+      }),
+    ).resolves.toBeNull();
+  });
+
+  it("throws API errors from facilitator transfer failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: async () => ({ error: "Only the facilitator can transfer the role" }),
+      }),
+    );
+
+    const { transferRetroFacilitator } = await import("./retroApi");
+    await expect(
+      transferRetroFacilitator("retro-1", {
+        fromParticipantId: "p1",
+        toParticipantId: "p2",
+      }),
+    ).rejects.toThrow("Only the facilitator can transfer the role");
+  });
+});
+
 describe("presence and delete helpers", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

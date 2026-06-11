@@ -11,7 +11,7 @@ All paths below are relative to the base URL (e.g. `GET /retrospectives/:id` →
 
 ## Overview
 
-- **8 endpoints** — health, room CRUD, presence, cards, votes
+- **9 endpoints** — health, room CRUD, presence, cards, votes, facilitator transfer
 - **JSON** request and response bodies (`Content-Type: application/json`)
 - **No authentication** — room IDs are unguessable UUIDs; the app stores participant identity in `sessionStorage`
 - **In-memory storage** — rooms disappear on server restart or `DELETE`
@@ -395,6 +395,58 @@ Cast or change a vote. **Only when `phase` is `voting`.**
 ```json
 { "error": "Card not found" }
 ```
+
+---
+
+### `POST /retrospectives/:id/facilitator/transfer`
+
+Transfer the facilitator role to another participant (similar to making someone else the meeting host).
+
+**Request body**
+
+```json
+{
+  "fromParticipantId": "current-facilitator-uuid",
+  "toParticipantId": "new-facilitator-uuid"
+}
+```
+
+| Field | Rules |
+|-------|-------|
+| `fromParticipantId` | Must be the current facilitator |
+| `toParticipantId` | Must be a different participant in the room |
+
+Allowed in any phase while the room exists.
+
+**Response `200`** — updated `Retrospective` with exactly one `isFacilitator: true` participant
+
+**Response `400`**
+
+```json
+{ "error": "fromParticipantId and toParticipantId are required" }
+```
+
+```json
+{ "error": "Cannot transfer facilitator role to yourself" }
+```
+
+**Response `403`**
+
+```json
+{ "error": "Only the facilitator can transfer the role" }
+```
+
+**Response `404`**
+
+```json
+{ "error": "Not found" }
+```
+
+```json
+{ "error": "Participant not found" }
+```
+
+`PUT` updates preserve each existing participant's facilitator flag; use this endpoint to change it.
 
 ---
 
